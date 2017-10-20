@@ -41,16 +41,16 @@
     </prerequisites>
 
     <scm>
-        <connection>scm:svn:http://svn.apache.org/repos/asf/sling/trunk/tooling/maven/maven-sling-plugin</connection>
-        <developerConnection>scm:svn:https://svn.apache.org/repos/asf/sling/trunk/tooling/maven/maven-sling-plugin</developerConnection>
-        <url>http://svn.apache.org/viewvc/sling/trunk/tooling/maven/maven-sling-plugin</url>
+        <connection>scm:git:https://gitbox.apache.org/repos/asf/sling-maven-sling-plugin.git</conncetion>
+        <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/sling-maven-sling-plugin.git</developerConnection>
+        <url>https://gitbox.apache.org/repos/asf?p=sling-maven-sling-plugin.git</url>
     </scm>
 
     <!-- Support for publishing the mvn site. -->
     <distributionManagement>
         <site>
             <id>apache.website</id>
-            <url>scm:svn:https://svn.apache.org/repos/asf/sling/site/trunk/content/components/${maven.site.path}</url>
+            <url>https://gitbox.apache.org/repos/asf?p=sling-maven-sling-plugin.git</url>
         </site>
     </distributionManagement>
 
