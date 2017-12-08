@@ -50,7 +50,7 @@
     <distributionManagement>
         <site>
             <id>apache.website</id>
-            <url>https://gitbox.apache.org/repos/asf?p=sling-maven-sling-plugin.git</url>
+            <url>scm:git:https://gitbox.apache.org/repos/asf/sling-site.git</url>
         </site>
     </distributionManagement>
 
@@ -82,6 +82,15 @@
                 <configuration>
                     <checkoutDirectory>${user.home}/maven-sites/${maven.site.path}</checkoutDirectory>
                     <tryUpdate>true</tryUpdate>
+                    <skipDeletedFiles>true</skipDeletedFiles>
+                    <content>${project.build.directory}/staging</content>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-site-plugin</artifactId>
+                <configuration>
+                    <stagingDirectory>${project.build.directory}/staging/src/main/jbake/assets/components/${maven.site.path}</stagingDirectory>
                 </configuration>
             </plugin>
             <plugin>
