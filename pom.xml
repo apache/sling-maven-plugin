@@ -35,6 +35,7 @@
     <description>
         Apache Sling Maven Plugin for Supporting Bundle Development
     </description>
+    <url>https://sling.apache.org/components/maven-sling-plugin/</url>
 
     <prerequisites>
        <maven>3.0.4</maven>  <!-- still support older maven version than required in parent pom -->
