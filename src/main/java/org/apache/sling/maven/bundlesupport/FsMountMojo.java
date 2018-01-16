@@ -103,7 +103,7 @@ public class FsMountMojo extends AbstractFsMountMojo {
      *       &lt;bundle&gt;
      *         &lt;groupId&gt;org.apache.sling&lt;/groupId&gt;
      *         &lt;artifactId&gt;org.apache.sling.fsresource&lt;/artifactId&gt;
-     *         &lt;version&gt;2.1.8&lt;/version&gt;
+     *         &lt;version&gt;2.1.10&lt;/version&gt;
      *       &lt;/bundle&gt;
      *     &lt;/bundles&gt;
      *     &lt;preconditions&gt;
