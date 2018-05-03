@@ -20,6 +20,7 @@ package org.apache.sling.maven.bundlesupport;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,7 +31,6 @@ import javax.json.JsonObject;
 import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.CharEncoding;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.repository.ArtifactRepository;
@@ -232,7 +232,7 @@ public class FsMountMojo extends AbstractFsMountMojo {
             if ( status == 200 ) {                
                 final String jsonText;
                 try (InputStream jsonResponse = get.getResponseBodyAsStream()) {
-                    jsonText = IOUtils.toString(jsonResponse, CharEncoding.UTF_8);
+                    jsonText = IOUtils.toString(jsonResponse, StandardCharsets.UTF_8);
                 }
                 try {
                     JsonObject response = JsonSupport.parseObject(jsonText);

@@ -20,6 +20,7 @@ package org.apache.sling.maven.bundlesupport.fsresource;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -35,7 +36,6 @@ import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.CharEncoding;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
@@ -235,7 +235,7 @@ final class FsMountHelper {
                 }
                 final String jsonText;
                 try (InputStream jsonResponse = get.getResponseBodyAsStream()) {
-                    jsonText = IOUtils.toString(jsonResponse, CharEncoding.UTF_8);
+                    jsonText = IOUtils.toString(jsonResponse, StandardCharsets.UTF_8);
                 }
                 try {
                     JsonArray array = JsonSupport.parseArray(jsonText);

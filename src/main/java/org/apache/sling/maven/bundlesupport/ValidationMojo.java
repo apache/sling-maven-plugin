@@ -21,6 +21,7 @@ package org.apache.sling.maven.bundlesupport;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -30,7 +31,6 @@ import java.util.regex.Pattern;
 import javax.json.JsonException;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.CharEncoding;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.maven.model.Resource;
@@ -161,7 +161,7 @@ public class ValidationMojo extends AbstractMojo {
                 String json = null;
                 try {
                     fis = new FileInputStream(file);
-                    json = IOUtils.toString(fis, CharEncoding.UTF_8);
+                    json = IOUtils.toString(fis, StandardCharsets.UTF_8);
                 } catch (IOException ex) {
                     throw new MojoExecutionException(ex.getMessage(), ex);
                 } finally {
