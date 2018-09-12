@@ -34,7 +34,11 @@ import org.apache.maven.plugins.annotations.Parameter;
 abstract class AbstractBundlePostMojo extends AbstractMojo {
 
     /**
-     * The URL of the running Sling instance. The default is only useful for <strong>WebConsole</strong> deployment.
+     * The URL of the running Sling instance.
+     *
+     * <p>The default is only useful for <strong>WebConsole</strong> deployment.</p>
+     *
+     * <p>For <strong>WebDAV</strong> deployment it is recommended to include the Sling Simple WebDAV servlet root, for instance <a href="http://localhost:8080/dav/default/libs/sling/install">http://localhost:8080/dav/default/libs/sling/install</a>. Omitting the <tt>dav/default</tt> segment can lead to conflicts with other servlets.</p>
      */
     @Parameter(property="sling.url", defaultValue="http://localhost:8080/system/console", required = true)
     protected String slingUrl;
