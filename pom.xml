@@ -45,16 +45,8 @@
         <connection>scm:git:https://gitbox.apache.org/repos/asf/sling-maven-sling-plugin.git</connection>
         <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/sling-maven-sling-plugin.git</developerConnection>
         <url>https://gitbox.apache.org/repos/asf?p=sling-maven-sling-plugin.git</url>
-      <tag>HEAD</tag>
-  </scm>
-
-    <!-- Support for publishing the mvn site. -->
-    <distributionManagement>
-        <site>
-            <id>apache.website</id>
-            <url>https://gitbox.apache.org/repos/asf?p=sling-maven-sling-plugin.git</url>
-        </site>
-    </distributionManagement>
+        <tag>HEAD</tag>
+    </scm>
 
     <properties>
         <maven.site.path>${project.artifactId}-archives/${project.artifactId}-LATEST</maven.site.path>
