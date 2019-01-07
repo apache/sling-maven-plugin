@@ -27,37 +27,17 @@
         <relativePath />
     </parent>
 
-    <artifactId>maven-sling-plugin.reactor</artifactId>
+    <artifactId>maven-sling-plugin</artifactId>
     <version>2.4.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
-    <name>Apache Sling Sling Maven Plugin Reactor</name>
+    <name>Apache Sling Maven Sling Plugin Relocation</name>
+    <description>Please use plugin name 'sling-maven-plugin' instead.</description>
 
-    <scm>
-        <connection>scm:git:https://gitbox.apache.org/repos/asf/sling-maven-sling-plugin.git</connection>
-        <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/sling-maven-sling-plugin.git</developerConnection>
-        <url>https://gitbox.apache.org/repos/asf?p=sling-maven-sling-plugin.git</url>
-        <tag>HEAD</tag>
-    </scm>
-
-    <modules>
-        <module>sling-maven-plugin</module>
-        <module>relocate</module>
-    </modules>
-
-    <build>
-        <plugins>
-
-            <!-- do not deploy this reactor pom into maven repository -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-deploy-plugin</artifactId>
-                <configuration>
-                    <skip>true</skip>
-                </configuration>
-            </plugin>
-
-        </plugins>
-    </build>
+    <distributionManagement>
+        <relocation>
+            <artifactId>sling-maven-plugin</artifactId>
+        </relocation>
+    </distributionManagement>
 
 </project>
