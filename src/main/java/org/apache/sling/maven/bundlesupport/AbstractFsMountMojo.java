@@ -58,6 +58,12 @@ abstract class AbstractFsMountMojo extends AbstractBundlePostMojo {
     private File fileVaultFilterXmlFile;
 
     /**
+     * If set to <code>true</code> Sling File System Resource mount/unmount commands are ignored.
+     */
+    @Parameter(property = "sling.fsmount.skip", defaultValue = "false", required = true)
+    private boolean skip;
+    
+    /**
      * The Maven project.
      */
     @Parameter(defaultValue = "${project}", required = true, readonly = true)
@@ -65,6 +71,11 @@ abstract class AbstractFsMountMojo extends AbstractBundlePostMojo {
 
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
+        if (skip) {
+            getLog().debug("Skipping fsmount/fsunmount operation as instructed.");
+            return;
+        }
+        
         String targetUrl = getConsoleTargetURL();
         
         // ensure required bundles are installed
