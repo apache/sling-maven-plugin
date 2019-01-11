@@ -58,7 +58,7 @@ public final class SlingInitialContentMounter {
      * Add configurations to a running OSGi instance for initial content.
      * @param targetUrl The web console base url
      * @param bundleFile The artifact (bundle)
-     * @throws MojoExecutionException
+     * @throws MojoExecutionException Exception
      */
     public void mount(final String targetUrl, final File bundleFile) throws MojoExecutionException {
         // first, let's get the manifest and see if initial content is configured
@@ -161,7 +161,7 @@ public final class SlingInitialContentMounter {
      * Remove configurations from a running OSGi instance for initial content.
      * @param targetUrl The web console base url
      * @param bundleFile The artifact (bundle)
-     * @throws MojoExecutionException
+     * @throws MojoExecutionException Exception
      */
     public void unmount(final String targetUrl, final File bundleFile) throws MojoExecutionException {
         log.info("Removing file system provider configurations...");
@@ -175,7 +175,7 @@ public final class SlingInitialContentMounter {
      * Get the manifest from the File.
      * @param bundleFile The bundle jar
      * @return The manifest.
-     * @throws IOException
+     * @throws IOException Exception
      */
     private Manifest getManifest(final File bundleFile) throws IOException {
         JarFile file = null;

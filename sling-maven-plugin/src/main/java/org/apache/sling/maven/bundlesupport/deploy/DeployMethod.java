@@ -41,6 +41,7 @@ public interface DeployMethod {
      * Undeploy/uninstall a bundle on a Sling instance.
      * @param targetURL Target URL
      * @param file Bundle file
+     * @param bundleSymbolicName Bundle symbolic name
      * @param context Deploy context parameters
      * @throws MojoExecutionException Mojo execution execution
      */

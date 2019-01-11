@@ -144,7 +144,7 @@ abstract class AbstractBundlePostMojo extends AbstractMojo {
     }
 
     /**
-     * Returns the combination of <code>sling.url</code> and <code>sling.urlSuffix</code>.
+     * @return Returns the combination of <code>sling.url</code> and <code>sling.urlSuffix</code>.
      */
     protected String getTargetURL() {
         String targetURL = slingUrl;
@@ -155,7 +155,7 @@ abstract class AbstractBundlePostMojo extends AbstractMojo {
     }
 
     /**
-     * Returns the combination of <code>sling.console.url</code> and <code>sling.urlSuffix</code>.
+     * @return Returns the combination of <code>sling.console.url</code> and <code>sling.urlSuffix</code>.
      */
     protected String getConsoleTargetURL() {
         String targetURL = StringUtils.defaultString(slingConsoleUrl, slingUrl);
@@ -166,7 +166,7 @@ abstract class AbstractBundlePostMojo extends AbstractMojo {
     }
 
     /**
-     * Get the http client
+     * @return Get the http client
      */
     protected HttpClient getHttpClient() {
         final HttpClient client = new HttpClient();

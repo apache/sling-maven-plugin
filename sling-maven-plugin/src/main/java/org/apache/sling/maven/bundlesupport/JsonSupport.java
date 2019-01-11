@@ -78,6 +78,7 @@ public final class JsonSupport {
     /**
      * Validate JSON structure
      * @param jsonString JSON string
+     * @param tickToDoubleQuote Tick to double quote
      * @throws javax.json.JsonException when JSON structure is invalid
      */
     public static void validateJsonStructure(String jsonString, boolean tickToDoubleQuote) {

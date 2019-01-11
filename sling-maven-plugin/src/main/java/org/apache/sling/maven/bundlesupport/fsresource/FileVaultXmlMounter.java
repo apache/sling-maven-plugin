@@ -51,7 +51,7 @@ public final class FileVaultXmlMounter {
      * @param targetUrl The web console base url
      * @param jcrRootFile jcr_root directory
      * @param filterXmlFile FileVault Filter XML file
-     * @throws MojoExecutionException
+     * @throws MojoExecutionException Exception
      */
     public void mount(final String targetUrl, final File jcrRootFile, final File filterXmlFile) throws MojoExecutionException {
         log.info("Trying to configure file system provider...");
@@ -77,7 +77,7 @@ public final class FileVaultXmlMounter {
      * @param targetUrl The web console base url
      * @param jcrRootFile jcr_root directory
      * @param filterXmlFile FileVault Filter XML file
-     * @throws MojoExecutionException
+     * @throws MojoExecutionException Exception
      */
     public void unmount(final String targetUrl, final File jcrRootFile, final File filterXmlFile) throws MojoExecutionException {
         log.info("Removing file system provider configurations...");

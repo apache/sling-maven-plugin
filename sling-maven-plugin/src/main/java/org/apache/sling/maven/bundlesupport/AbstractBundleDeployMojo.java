@@ -131,11 +131,11 @@ abstract class AbstractBundleDeployMojo extends AbstractBundlePostMojo {
 
     /**
      * Change the version in jar
-     * 
-     * @param newVersion
-     * @param file
-     * @return
-     * @throws MojoExecutionException
+     * @param file File
+     * @param oldVersion Old version
+     * @param newVersion New version
+     * @return File
+     * @throws MojoExecutionException Exception
      */
     protected File changeVersion(File file, String oldVersion, String newVersion)
             throws MojoExecutionException {
