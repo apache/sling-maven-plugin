@@ -129,8 +129,10 @@ public class WebDavPutDeployMethod implements DeployMethod {
         // go through all intermediate URIs (longest first)
         for (String intermediateUri : intermediateUris) {
             // until one is existing
-            int result = performHead(intermediateUri, context) ;
-            if (result == HttpStatus.SC_OK) {
+            int result = performHead(intermediateUri, context);
+            // if the result is 200 (in case the default get servlet allows returning index files) or 403 (in case the default get servlet does no allow returning index files)
+            // we assume that the intermediate node exists already
+            if (result == HttpStatus.SC_OK || result == HttpStatus.SC_FORBIDDEN) {
                 existingIntermediateUri = intermediateUri;
                 break;
             } else if (result != HttpStatus.SC_NOT_FOUND) {
