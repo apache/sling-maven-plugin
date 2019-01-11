@@ -28,7 +28,7 @@
     </parent>
 
     <artifactId>sling-maven-plugin.parent</artifactId>
-    <version>2.4.0</version>
+    <version>2.4.1-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>Apache Sling Maven Plugin Parent</name>
@@ -71,9 +71,4 @@
             </build>
         </profile>
     </profiles>
-
-
-  <scm>
-    <tag>sling-maven-plugin.reactor-2.4.0</tag>
-  </scm>
 </project>
