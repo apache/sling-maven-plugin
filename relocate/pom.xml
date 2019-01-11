@@ -31,7 +31,7 @@
     <version>2.4.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
-    <name>Apache Sling Maven Sling Plugin Relocation</name>
+    <name>Apache Sling Maven Plugin Relocation</name>
     <description>Please use plugin name 'sling-maven-plugin' instead.</description>
 
     <distributionManagement>

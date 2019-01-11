@@ -31,11 +31,11 @@
     <version>2.4.0-SNAPSHOT</version>
     <packaging>maven-plugin</packaging>
 
-    <name>Apache Sling Maven Sling Plugin</name>
+    <name>Apache Sling Maven Plugin</name>
     <description>
         Apache Sling Maven Plugin for Supporting Bundle Development
     </description>
-    <url>https://sling.apache.org/components/maven-sling-plugin/</url>
+    <url>https://sling.apache.org/components/sling-maven-plugin/</url>
 
     <prerequisites>
        <maven>3.0.4</maven>  <!-- still support older maven version than required in parent pom -->

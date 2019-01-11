@@ -27,11 +27,11 @@
         <relativePath />
     </parent>
 
-    <artifactId>maven-sling-plugin.reactor</artifactId>
+    <artifactId>sling-maven-plugin.reactor</artifactId>
     <version>2.4.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
-    <name>Apache Sling Sling Maven Plugin Reactor</name>
+    <name>Apache Sling Maven Plugin Reactor</name>
 
     <scm>
         <connection>scm:git:https://gitbox.apache.org/repos/asf/sling-maven-sling-plugin.git</connection>
