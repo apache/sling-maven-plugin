@@ -28,7 +28,7 @@
     </parent>
 
     <artifactId>maven-sling-plugin</artifactId>
-    <version>2.4.0-SNAPSHOT</version>
+    <version>2.4.0</version>
     <packaging>pom</packaging>
 
     <name>Apache Sling Maven Plugin Relocation</name>
@@ -40,4 +40,8 @@
         </relocation>
     </distributionManagement>
 
+
+  <scm>
+    <tag>sling-maven-plugin.reactor-2.4.0</tag>
+  </scm>
 </project>
