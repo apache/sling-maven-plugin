@@ -56,14 +56,22 @@ import org.apache.sling.maven.bundlesupport.fsresource.SlingInitialContentMounte
 @Mojo(name = "fsmount", requiresProject = true)
 public class FsMountMojo extends AbstractFsMountMojo {
     
-    private static final String BUNDLE_GROUP_ID = "org.apache.sling"; 
+    private static final String BUNDLE_GROUP_ID = "org.apache.sling";
 
-    private static final String FS_BUNDLE_ARTIFACT_ID = "org.apache.sling.fsresource"; 
-    private static final String FS_BUNDLE_DEFAULT_VERSION = "2.1.14"; 
-    private static final String FS_BUNDLE_LEGACY_DEFAULT_VERSION = "1.4.8"; 
+    private static final String FS_BUNDLE_ARTIFACT_ID = "org.apache.sling.fsresource";
+    private static final String FS_BUNDLE_DEFAULT_VERSION = "2.1.15-SNAPSHOT";
+    private static final String FS_BUNDLE_LEGACY_DEFAULT_VERSION = "1.4.8";
     
-    private static final String RESOURCE_RESOLVER_BUNDLE_ARTIFACT_ID = "org.apache.sling.resourceresolver"; 
-    private static final String RESOURCE_RESOLVER_BUNDLE_MIN_VERSION = "1.5.18"; 
+    private static final String RESOURCE_RESOLVER_BUNDLE_ARTIFACT_ID = "org.apache.sling.resourceresolver";
+    private static final String RESOURCE_RESOLVER_BUNDLE_MIN_VERSION = "1.5.18";
+
+    private static final String JOHNZON_BUNDLE_ARTIFACT_ID = "org.apache.sling.commons.johnzon";
+    private static final String JOHNZON_BUNDLE_MIN_VERSION = "1.0.0";
+
+    private static final String COMMONS_COLLECTIONS4_BUNDLE_GROUP_ID = "org.apache.commons";
+    private static final String COMMONS_COLLECTIONS4_BUNDLE_ARTIFACT_ID = "commons-collections4";
+    private static final String COMMONS_COLLECTIONS4_BUNDLE_MIN_VERSION = "4.1";
+    private static final String COMMONS_COLLECTIONS4_BUNDLE_SYMBOLICNAME = "org.apache.commons.collections4";
 
     /**
      * Bundle deployment method. One of the following three values are allowed
@@ -102,8 +110,19 @@ public class FsMountMojo extends AbstractFsMountMojo {
      *     &lt;bundles&gt;
      *       &lt;bundle&gt;
      *         &lt;groupId&gt;org.apache.sling&lt;/groupId&gt;
+     *         &lt;artifactId&gt;org.apache.sling.commons.johnzon&lt;/artifactId&gt;
+     *         &lt;version&gt;1.0.0&lt;/version&gt;
+     *       &lt;/bundle&gt;
+     *       &lt;bundle&gt;
+     *         &lt;groupId&gt;org.apache.commons&lt;/groupId&gt;
+     *         &lt;artifactId&gt;commons-collections4&lt;/artifactId&gt;
+     *         &lt;version&gt;4.1&lt;/version&gt;
+     *         &lt;symbolicName&gt;org.apache.commons.collections4&lt;/symbolicName&gt;
+     *       &lt;/bundle&gt;
+     *       &lt;bundle&gt;
+     *         &lt;groupId&gt;org.apache.sling&lt;/groupId&gt;
      *         &lt;artifactId&gt;org.apache.sling.fsresource&lt;/artifactId&gt;
-     *         &lt;version&gt;2.1.14&lt;/version&gt;
+     *         &lt;version&gt;2.1.15-SNAPSHOT&lt;/version&gt;
      *       &lt;/bundle&gt;
      *     &lt;/bundles&gt;
      *     &lt;preconditions&gt;
@@ -162,6 +181,9 @@ public class FsMountMojo extends AbstractFsMountMojo {
         
         if (deployFsResourceBundlePrerequisites == null) {
             BundlePrerequisite latest = new BundlePrerequisite();
+            latest.addBundle(new Bundle(BUNDLE_GROUP_ID, JOHNZON_BUNDLE_ARTIFACT_ID, JOHNZON_BUNDLE_MIN_VERSION));
+            latest.addBundle(new Bundle(COMMONS_COLLECTIONS4_BUNDLE_GROUP_ID, COMMONS_COLLECTIONS4_BUNDLE_ARTIFACT_ID, 
+                    COMMONS_COLLECTIONS4_BUNDLE_MIN_VERSION, COMMONS_COLLECTIONS4_BUNDLE_SYMBOLICNAME));
             latest.addBundle(new Bundle(BUNDLE_GROUP_ID, FS_BUNDLE_ARTIFACT_ID, FS_BUNDLE_DEFAULT_VERSION));
             latest.addPrecondition(new Bundle(BUNDLE_GROUP_ID, RESOURCE_RESOLVER_BUNDLE_ARTIFACT_ID, RESOURCE_RESOLVER_BUNDLE_MIN_VERSION));
             addDeployFsResourceBundlePrerequisite(latest);
@@ -183,11 +205,11 @@ public class FsMountMojo extends AbstractFsMountMojo {
     
     private void deployBundle(Bundle bundle, String targetUrl) throws MojoExecutionException {
         if (isBundleInstalled(bundle, targetUrl)) {
-            getLog().debug("Bundle " + bundle.getSymbolicName() + " " + bundle.getVersion() + " (or higher) already installed.");
+            getLog().debug("Bundle " + bundle.getSymbolicName() + " " + bundle.getOsgiVersion() + " (or higher) already installed.");
             return;
         }
         
-        getLog().info("Installing Bundle " + bundle.getSymbolicName() + " " + bundle.getVersion() + " to "
+        getLog().info("Installing Bundle " + bundle.getSymbolicName() + " " + bundle.getOsgiVersion() + " to "
                     + targetUrl + " via " + deploymentMethod);
         
         File file = getArtifactFile(bundle, "jar");
@@ -200,7 +222,7 @@ public class FsMountMojo extends AbstractFsMountMojo {
     private boolean isBundlePrerequisitesPreconditionsMet(BundlePrerequisite bundlePrerequisite, String targetUrl) throws MojoExecutionException {
         for (Bundle precondition : bundlePrerequisite.getPreconditions()) {
             if (!isBundleInstalled(precondition, targetUrl)) {
-                getLog().debug("Bundle " + precondition.getSymbolicName() + " " + precondition.getVersion() + " (or higher) is not installed.");
+                getLog().debug("Bundle " + precondition.getSymbolicName() + " " + precondition.getOsgiVersion() + " (or higher) is not installed.");
                 return false;
             }
         }
@@ -213,7 +235,7 @@ public class FsMountMojo extends AbstractFsMountMojo {
             return false;
         }
         DefaultArtifactVersion installedVersion = new DefaultArtifactVersion(installedVersionString);
-        DefaultArtifactVersion requiredVersion = new DefaultArtifactVersion(bundle.getVersion());
+        DefaultArtifactVersion requiredVersion = new DefaultArtifactVersion(bundle.getOsgiVersion());
         return (installedVersion.compareTo(requiredVersion) >= 0);
     }
 

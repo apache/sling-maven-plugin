@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
+import org.osgi.framework.Version;
 
 /**
  * Bundles that have to be installed as prerequisites to execute a goal.
@@ -77,6 +78,13 @@ public final class BundlePrerequisite {
             this.version = version;
         }
         
+        public Bundle(String groupId, String artifactId, String version, String symbolicName) {
+            this.groupId = groupId;
+            this.artifactId = artifactId;
+            this.version = version;
+            this.symbolicName = symbolicName;
+        }
+        
         public String getGroupId() {
             return groupId;
         }
@@ -107,6 +115,19 @@ public final class BundlePrerequisite {
         
         public void setVersion(String version) {
             this.version = version;
+        }
+        
+        public String getOsgiVersion() {
+            if (this.version == null) {
+                return null;
+            }
+            // convert to three digit osgi version number
+            try {
+                return Version.parseVersion(this.version).toString();
+            }
+            catch (IllegalArgumentException ex) {
+                return this.version;
+            }
         }
         
     }
