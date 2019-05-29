@@ -115,7 +115,7 @@ public final class SlingInitialContentMounter {
                 if ( targetPath != null && !targetPath.endsWith("/") ) {
                     targetPath = targetPath + "/";
                 }
-                if ( targetPath != null && path.startsWith(targetPath) ) {
+                if ( targetPath != null && path != null && path.startsWith(targetPath) ) {
                     child = child.substring(targetPath.length());
                 }
                 dir = new File(rsrc.getDirectory(), child);
