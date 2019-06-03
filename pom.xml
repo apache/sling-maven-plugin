@@ -23,12 +23,12 @@
     <parent>
         <groupId>org.apache.sling</groupId>
         <artifactId>sling-maven-plugin.parent</artifactId>
-        <version>2.4.2</version>
+        <version>2.4.3-SNAPSHOT</version>
         <relativePath>parent/pom.xml</relativePath>
     </parent>
 
     <artifactId>sling-maven-plugin.reactor</artifactId>
-    <version>2.4.2</version>
+    <version>2.4.3-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>Apache Sling Maven Plugin Reactor</name>
@@ -37,7 +37,7 @@
         <connection>scm:git:https://gitbox.apache.org/repos/asf/sling-maven-plugin.git</connection>
         <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/sling-maven-plugin.git</developerConnection>
         <url>https://gitbox.apache.org/repos/asf?p=sling-maven-plugin.git</url>
-        <tag>sling-maven-plugin.reactor-2.4.2</tag>
+        <tag>HEAD</tag>
     </scm>
 
     <modules>
