@@ -45,7 +45,7 @@ import org.apache.maven.plugins.annotations.Parameter;
  * <li>
  *  SlingPostServlet, uses internally <code>ResourceResolverFactory.create(...)</code> without setting any <code>jcr:primaryType</code>.
  *  Therefore the <code>JcrResourceProviderFactory</code> will call <code>Node.addNode(String relPath)</code> which determines a fitting 
- *  node type automatically, depending on the parents node type definition (see <a href="http://www.day.com/specs/jsr170/javadocs/jcr-2.0/javax/jcr/Node.html#addNode%28java.lang.String%29">Javadoc</a>).
+ *  node type automatically, depending on the parents node type definition (see <a href="https://docs.adobe.com/docs/en/spec/jsr170/javadocs/jcr-2.0/javax/jcr/Node.html#addNode(java.lang.String)">Javadoc</a>).
  *  So in most of the cases this should be a <code>sling:Folder</code>, as this is the first allowed child node definition in <code>sling:Folder</code>.
  *  This only may differ, if your existing parent node is not of type <code>sling:Folder</code> itself.
  * </li>
