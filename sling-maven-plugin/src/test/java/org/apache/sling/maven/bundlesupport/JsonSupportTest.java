@@ -22,14 +22,12 @@ import static org.apache.sling.maven.bundlesupport.JsonSupport.accumulate;
 import static org.apache.sling.maven.bundlesupport.JsonSupport.parseArray;
 import static org.apache.sling.maven.bundlesupport.JsonSupport.parseObject;
 import static org.apache.sling.maven.bundlesupport.JsonSupport.toJson;
-import static org.apache.sling.maven.bundlesupport.JsonSupport.validateJsonStructure;
 import static org.junit.Assert.assertEquals;
 
 import java.util.HashMap;
 import java.util.Map;
 
 import javax.json.JsonArray;
-import javax.json.JsonException;
 import javax.json.JsonObject;
 
 import org.junit.Test;
@@ -50,23 +48,6 @@ public class JsonSupportTest {
         JsonArray array = parseArray("[{\"prop1\":123}]");
         assertEquals(1, array.size());
         assertEquals(123, array.getJsonObject(0).getInt("prop1"));
-    }
-
-    @Test
-    public void testValidateJsonStructure() {
-        validateJsonStructure("{\"prop1\":123}", false);
-        validateJsonStructure("[{\"prop1\":123}]", false);
-        validateJsonStructure("{'prop1':123}", true);
-    }
-
-    @Test(expected=JsonException.class)
-    public void testValidateJsonStructure_Invalid() {
-        validateJsonStructure("wurstbrot", false);
-    }
-
-    @Test(expected=JsonException.class)
-    public void testValidateJsonStructure_InvalidQuoteTick() {
-        validateJsonStructure("{'prop1':123}", false);
     }
 
     @Test
