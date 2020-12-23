@@ -57,7 +57,7 @@ import org.scannotation.AnnotationDB;
 /**
  * Build  <a href="http://sling.apache.org/documentation/the-sling-engine/adapters.html">adapter metadata (JSON)</a> for the Web Console Plugin at {@code /system/console/status-adapters} and
  * {@code /system/console/adapters} from classes annotated with 
- * <a href="http://svn.apache.org/viewvc/sling/trunk/tooling/maven/adapter-annotations/">adapter annotations</a>.
+ * <a href="https://github.com/apache/sling-adapter-annotations">adapter annotations</a>.
  */
 @Mojo(name="generate-adapter-metadata", defaultPhase = LifecyclePhase.PROCESS_CLASSES, 
     threadSafe = true, requiresDependencyResolution = ResolutionScope.COMPILE)
@@ -79,7 +79,8 @@ public class GenerateAdapterMetadataMojo extends AbstractMojo {
         }
     }
 
-    @Parameter(defaultValue = "${project.build.outputDirectory}", readonly = true)
+    /** The directory which to check for classes with adapter metadata annotations. */
+    @Parameter(defaultValue = "${project.build.outputDirectory}")
     private File buildOutputDirectory;
 
     /**
@@ -88,7 +89,10 @@ public class GenerateAdapterMetadataMojo extends AbstractMojo {
     @Parameter(property = "adapter.descriptor.name", defaultValue = "SLING-INF/adapters.json")
     private String fileName;
 
-    @Parameter(defaultValue = "${project.build.directory}/adapter-plugin-generated", required = true, readonly = true)
+    /**
+     * The output directory in which to emit the descriptor file with name {@link GenerateAdapterMetadataMojo#fileName}.
+     */
+    @Parameter(defaultValue = "${project.build.outputDirectory}", required = true)
     private File outputDirectory;
 
     /**
@@ -104,7 +108,7 @@ public class GenerateAdapterMetadataMojo extends AbstractMojo {
             final AnnotationDB annotationDb = new AnnotationDB();
             annotationDb.scanArchives(buildOutputDirectory.toURI().toURL());
 
-            final Set<String> annotatedClassNames = new HashSet<String>();
+            final Set<String> annotatedClassNames = new HashSet<>();
             addAnnotatedClasses(annotationDb, annotatedClassNames, Adaptable.class);
             addAnnotatedClasses(annotationDb, annotatedClassNames, Adaptables.class);
 
