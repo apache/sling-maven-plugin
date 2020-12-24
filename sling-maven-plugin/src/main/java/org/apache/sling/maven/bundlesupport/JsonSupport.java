@@ -18,8 +18,6 @@
  */
 package org.apache.sling.maven.bundlesupport;
 
-import static org.apache.sling.jcr.contentparser.impl.JsonTicksConverter.tickToDoubleQuote;
-
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -74,24 +72,7 @@ public final class JsonSupport {
             return jsonReader.readArray();
         }
     }
-    
-    /**
-     * Validate JSON structure
-     * @param jsonString JSON string
-     * @param tickToDoubleQuote Tick to double quote
-     * @throws javax.json.JsonException when JSON structure is invalid
-     */
-    public static void validateJsonStructure(String jsonString, boolean tickToDoubleQuote) {
-        String transformedJsonString = jsonString;
-        if (tickToDoubleQuote) {
-            transformedJsonString = tickToDoubleQuote(jsonString);
-        }
-        try (StringReader reader = new StringReader(transformedJsonString);
-                JsonReader jsonReader = JSON_READER_FACTORY.createReader(reader)) {
-            jsonReader.read();
-        }
-    }
-    
+
     @SuppressWarnings("unchecked")
     public static void accumulate(Map<String,Object> obj, String name, String value) {
         Object current = obj.get(name);
@@ -99,7 +80,7 @@ public final class JsonSupport {
             obj.put(name, value);
         }
         else if (current instanceof List) {
-            List<String> array = new ArrayList<>((List)current);
+            List<String> array = new ArrayList<>((List<String>)current);
             array.add(value);
             obj.put(name, array);
         }
