@@ -38,7 +38,7 @@ abstract class AbstractBundlePostMojo extends AbstractMojo {
      *
      * <p>The default is only useful for <strong>WebConsole</strong> deployment.</p>
      *
-     * <p>For <strong>WebDAV</strong> deployment it is recommended to include the Sling Simple WebDAV servlet root, for instance <a href="http://localhost:8080/dav/default/libs/sling/install">http://localhost:8080/dav/default/libs/sling/install</a>. Omitting the <tt>dav/default</tt> segment can lead to conflicts with other servlets.</p>
+     * <p>For <strong>WebDAV</strong> deployment it is recommended to include the Sling Simple WebDAV servlet root, for instance <a href="http://localhost:8080/dav/default/libs/sling/install">http://localhost:8080/dav/default/libs/sling/install</a>. Omitting the {@code dav/default} segment can lead to conflicts with other servlets.</p>
      */
     @Parameter(property="sling.url", defaultValue="http://localhost:8080/system/console", required = true)
     protected String slingUrl;

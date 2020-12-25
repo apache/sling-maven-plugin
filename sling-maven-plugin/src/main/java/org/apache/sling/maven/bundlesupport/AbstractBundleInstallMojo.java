@@ -47,7 +47,7 @@ abstract class AbstractBundleInstallMojo extends AbstractBundlePostMojo {
      *  Make sure that {@link #slingUrl} points to the Felix Web Console in that case.</li>
      *  <li><strong>WebDAV</strong>, uses <a href="https://sling.apache.org/documentation/development/repository-based-development.html">
      *  WebDAV</a> for deployment (HTTP PUT). Make sure that {@link #slingUrl} points to the entry path of 
-     *  the Sling WebDAV bundle (defaults to <tt>/dav/default</tt> in the Sling starter). Issues a HTTP Delete for the uninstall goal.</li>
+     *  the Sling WebDAV bundle (defaults to {@code /dav/default} in the Sling starter). Issues a HTTP Delete for the uninstall goal.</li>
      *  <li><strong>SlingPostServlet</strong>, uses the
      *  <a href="https://sling.apache.org/documentation/bundles/manipulating-content-the-slingpostservlet-servlets-post.html">Sling Post Servlet</a> for deployment (HTTP POST).
      *  Make sure that {@link #slingUrl} points a path which is handled by the Sling POST Servlet (usually below regular Sling root URL).</li>
