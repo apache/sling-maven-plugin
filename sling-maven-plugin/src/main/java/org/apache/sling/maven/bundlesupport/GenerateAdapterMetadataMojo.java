@@ -5,9 +5,9 @@
  * licenses this file to You under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
@@ -56,10 +56,10 @@ import org.scannotation.AnnotationDB;
 
 /**
  * Build  <a href="http://sling.apache.org/documentation/the-sling-engine/adapters.html">adapter metadata (JSON)</a> for the Web Console Plugin at {@code /system/console/status-adapters} and
- * {@code /system/console/adapters} from classes annotated with 
+ * {@code /system/console/adapters} from classes annotated with
  * <a href="https://github.com/apache/sling-adapter-annotations">adapter annotations</a>.
  */
-@Mojo(name="generate-adapter-metadata", defaultPhase = LifecyclePhase.PROCESS_CLASSES, 
+@Mojo(name="generate-adapter-metadata", defaultPhase = LifecyclePhase.PROCESS_CLASSES,
     threadSafe = true, requiresDependencyResolution = ResolutionScope.COMPILE)
 public class GenerateAdapterMetadataMojo extends AbstractMojo {
 
@@ -126,7 +126,6 @@ public class GenerateAdapterMetadataMojo extends AbstractMojo {
                 final ClassNode classNode = new ClassNode();
                 classReader.accept(classNode, SKIP_CODE | SKIP_DEBUG | SKIP_FRAMES);
 
-                @SuppressWarnings("unchecked")
                 final List<AnnotationNode> annotations = classNode.invisibleAnnotations;
                 for (final AnnotationNode annotation : annotations) {
                     if (ADAPTABLE_DESC.equals(annotation.desc)) {
@@ -153,7 +152,7 @@ public class GenerateAdapterMetadataMojo extends AbstractMojo {
         }
 
     }
-    
+
     private void addAnnotatedClasses(final AnnotationDB annotationDb, final Set<String> annotatedClassNames, final Class<? extends Annotation> clazz) {
         Set<String> classNames = annotationDb.getAnnotationIndex().get(clazz.getName());
         if (classNames == null || classNames.isEmpty()) {
@@ -262,10 +261,10 @@ public class GenerateAdapterMetadataMojo extends AbstractMojo {
         if (adapterClasses == null) {
             throw new IllegalArgumentException("Adapter annotation is malformed. Expecting a list of adapter classes");
         }
-        
+
         for (final Type adapterClass : adapterClasses) {
             JsonSupport.accumulate(adaptableDescription, condition, adapterClass.getClassName());
         }
     }
-    
+
 }
