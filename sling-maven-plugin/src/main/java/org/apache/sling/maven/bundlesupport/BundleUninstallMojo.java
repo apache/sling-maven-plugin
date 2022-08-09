@@ -43,10 +43,10 @@ public class BundleUninstallMojo extends AbstractBundleInstallMojo {
      * The name of the generated JAR file.
      */
     @Parameter(property = "sling.file", defaultValue = "${project.build.directory}/${project.build.finalName}.jar")
-    private String bundleFileName;
+    private File bundleFileName;
 
     @Override
-    protected String getBundleFileName() {
+    protected File getBundleFileName() {
         return bundleFileName;
     }
 
@@ -55,8 +55,8 @@ public class BundleUninstallMojo extends AbstractBundleInstallMojo {
      */
     @Override
     public void execute() throws MojoExecutionException {
-        // only upload if packaging as an osgi-bundle
-        final File bundleFile = new File(bundleFileName);
+        // only uninstall if packaging as an osgi-bundle
+        final File bundleFile = getBundleFileName();
         final String bundleName = getBundleSymbolicName(bundleFile);
         if (bundleName == null) {
             getLog().info(bundleFile + " is not an OSGi Bundle, not uploading");

@@ -17,13 +17,15 @@
 
 package org.apache.sling.maven.bundlesupport;
 
+import java.io.File;
+
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 
 /**
- * Install an OSGi bundle to a running Sling instance.
+ * Install a local OSGi bundle file to a running Sling instance.
  * The plugin places an HTTP POST request to
  * <a href="http://felix.apache.org/documentation/subprojects/apache-felix-web-console/web-console-restful-api.html#post-requests">Felix Web Console</a>.
  * It's also possible to HTTP PUT instead of POST leveraging the <a href="http://sling.apache.org/documentation/development/repository-based-development.html">WebDAV bundle from Sling</a>.
@@ -64,10 +66,10 @@ public class BundleInstallMojo extends AbstractBundleInstallMojo {
     private boolean skip;
     
     /**
-     * The name of the generated JAR file.
+     * The file path of the bundle file to deploy.
      */
     @Parameter(property = "sling.file", defaultValue = "${project.build.directory}/${project.build.finalName}.jar", required = true)
-    private String bundleFileName;
+    private File bundleFileName;
 
     @Override
     public void execute() throws MojoExecutionException {
@@ -81,7 +83,7 @@ public class BundleInstallMojo extends AbstractBundleInstallMojo {
     }
     
     @Override
-    protected String getBundleFileName() {
+    protected File getBundleFileName() {
         return bundleFileName;
     }
 }

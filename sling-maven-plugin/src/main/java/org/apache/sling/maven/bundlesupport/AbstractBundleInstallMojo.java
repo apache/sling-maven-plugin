@@ -103,19 +103,17 @@ abstract class AbstractBundleInstallMojo extends AbstractBundlePostMojo {
         super();
     }
 
-    protected abstract String getBundleFileName() throws MojoExecutionException;
+    protected abstract File getBundleFileName() throws MojoExecutionException;
 
     @Override
     public void execute() throws MojoExecutionException {
 
         // get the file to upload
-        String bundleFileName = getBundleFileName();
+        File bundleFile = getBundleFileName();
 
         // only upload if packaging as an osgi-bundle
-        File bundleFile = new File(bundleFileName);
-
-        if(!bundleFile.exists()) {
-            getLog().info(bundleFile + " does not exist, no uploading");
+        if (!bundleFile.exists()) {
+            getLog().info(bundleFile + " does not exist, not uploading");
             return;
         }
 

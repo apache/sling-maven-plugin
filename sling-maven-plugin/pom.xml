@@ -38,26 +38,17 @@
     <url>https://sling.apache.org/components/sling-maven-plugin/</url>
 
     <prerequisites>
-       <maven>3.0.4</maven>  <!-- still support older maven version than required in parent pom -->
+       <maven>${mavenVersion}</maven>
     </prerequisites>
 
     <properties>
         <maven.site.path>${project.artifactId}-archives/${project.artifactId}-LATEST</maven.site.path>
+        <sling.java.version>8</sling.java.version>
+        <mavenVersion>3.3.1</mavenVersion><!-- minimum target Maven version this plugin is compatible with -->
+        <asmVersion>9.3</asmVersion>
     </properties>
 
     <build>
-        <pluginManagement>
-            <plugins>
-                <plugin>
-                    <artifactId>maven-site-plugin</artifactId>
-                    <version>3.9.1</version>
-                </plugin>
-                <plugin>
-                    <artifactId>maven-project-info-reports-plugin</artifactId>
-                    <version>3.1.1</version>
-                </plugin>
-            </plugins>
-        </pluginManagement>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -151,23 +142,22 @@
               </exclusion>
             </exclusions>
         </dependency>
-        <!-- Stick with json 1.0 specs until the plugin can be updated to Java 8 - json_1.1 spec requires Java 8 (SLING-7644) -->
         <dependency>
             <groupId>org.apache.geronimo.specs</groupId>
-            <artifactId>geronimo-json_1.0_spec</artifactId>
-            <version>1.0-alpha-1</version>
+            <artifactId>geronimo-json_1.1_spec</artifactId>
+            <version>1.5</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.johnzon</groupId>
             <artifactId>johnzon-core</artifactId>
-            <version>1.0.0</version>
+            <version>1.2.16</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.jackrabbit.vault</groupId>
             <artifactId>org.apache.jackrabbit.vault</artifactId>
-            <version>3.4.6</version>
+            <version>3.5.0</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
@@ -179,39 +169,38 @@
             <groupId>org.osgi</groupId>
             <artifactId>org.osgi.framework</artifactId>
             <version>1.8.0</version>
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.sling</groupId>
             <artifactId>org.apache.sling.commons.osgi</artifactId>
             <version>2.4.0</version>
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.maven</groupId>
             <artifactId>maven-plugin-api</artifactId>
-            <version>3.0.4</version>
-            <scope>compile</scope>
+            <version>${mavenVersion}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.maven</groupId>
+            <artifactId>maven-core</artifactId>
+            <version>${mavenVersion}</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.maven</groupId>
             <artifactId>maven-artifact</artifactId>
-            <version>3.0.4</version>
-            <scope>compile</scope>
+            <version>${mavenVersion}</version>
+            <scope>provided</scope>
         </dependency>
-        <dependency>
-            <groupId>org.apache.maven</groupId>
-            <artifactId>maven-compat</artifactId>
-            <version>3.0.4</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.maven</groupId>
-            <artifactId>maven-archiver</artifactId>
-            <version>2.6</version>
-        </dependency>
+        <!-- use for evaluating Adapter annotations -->
         <dependency>
             <groupId>net.sf.scannotation</groupId>
             <artifactId>scannotation</artifactId>
             <version>1.0.2</version>
+            <scope>compile</scope>
             <exclusions>
                 <exclusion>
                     <groupId>javassist</groupId>
@@ -223,30 +212,33 @@
             <groupId>org.javassist</groupId>
             <artifactId>javassist</artifactId>
             <version>3.18.2-GA</version>
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.sling</groupId>
             <artifactId>adapter-annotations</artifactId>
             <version>1.0.0</version>
+            <scope>compile</scope>
         </dependency>
         <!-- https://mvnrepository.com/artifact/org.ow2.asm/asm -->
         <dependency>
             <groupId>org.ow2.asm</groupId>
             <artifactId>asm</artifactId>
-            <version>9.0</version>
+            <version>${asmVersion}</version>
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.ow2.asm</groupId>
             <artifactId>asm-commons</artifactId>
-            <version>9.0</version>
+            <version>${asmVersion}</version>
+            <scope>compile</scope>
         </dependency>
         
         <dependency>
             <groupId>org.apache.maven.plugin-tools</groupId>
             <artifactId>maven-plugin-annotations</artifactId>
-            <version>3.4</version>
             <scope>provided</scope>
-        </dependency>        
+        </dependency>
         <dependency>
             <groupId>org.sonatype.plexus</groupId>
             <artifactId>plexus-build-api</artifactId>
