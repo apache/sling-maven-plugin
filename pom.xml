@@ -33,13 +33,6 @@
 
     <name>Apache Sling Maven Plugin Reactor</name>
 
-    <scm>
-        <connection>scm:git:https://gitbox.apache.org/repos/asf/sling-maven-plugin.git</connection>
-        <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/sling-maven-plugin.git</developerConnection>
-        <url>https://gitbox.apache.org/repos/asf?p=sling-maven-plugin.git</url>
-        <tag>HEAD</tag>
-    </scm>
-
     <modules>
         <module>parent</module>
         <module>sling-maven-plugin</module>
