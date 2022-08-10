@@ -38,6 +38,7 @@ import org.apache.hc.core5.http.HttpRequestInterceptor;
 import org.apache.hc.core5.http.protocol.HttpContext;
 import org.apache.hc.core5.util.Timeout;
 import org.apache.maven.plugin.AbstractMojo;
+import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugins.annotations.Parameter;
 
 abstract class AbstractBundlePostMojo extends AbstractMojo {
@@ -191,7 +192,7 @@ abstract class AbstractBundlePostMojo extends AbstractMojo {
         
         return HttpClients.custom()
                 .setDefaultRequestConfig(requestConfig)
-                .addRequestInterceptorLast(new PreemptiveBasicAuthInterceptor(basicAuth, target))
+                .addRequestInterceptorFirst(new PreemptiveBasicAuthInterceptor(basicAuth, target, getLog()))
                 .build();
     }
 
@@ -199,11 +200,13 @@ abstract class AbstractBundlePostMojo extends AbstractMojo {
 
         private final BasicScheme basicAuth;
         private final HttpHost targetHost;
+        private final Log log;
 
-        public PreemptiveBasicAuthInterceptor(BasicScheme basicAuth, HttpHost targetHost) {
+        public PreemptiveBasicAuthInterceptor(BasicScheme basicAuth, HttpHost targetHost, Log log) {
             super();
             this.basicAuth = basicAuth;
             this.targetHost = targetHost;
+            this.log = log;
         }
 
         @Override
@@ -213,8 +216,9 @@ abstract class AbstractBundlePostMojo extends AbstractMojo {
             }
             HttpClientContext httpClientContext = (HttpClientContext)context;
 
-            // Add AuthCache to the execution context
-            httpClientContext.resetAuthExchange(targetHost, basicAuth);
+            log.debug("Adding preemptive authentication to request for target host " + targetHost);
+            // as the AuthExchange object is already retrieved by the client when the interceptor kicks in, it needs to modify the existing object
+            httpClientContext.getAuthExchange(targetHost).select(basicAuth);
         }
     }
 }
