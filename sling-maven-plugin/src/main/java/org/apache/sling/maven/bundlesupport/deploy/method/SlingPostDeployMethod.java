@@ -21,94 +21,57 @@ package org.apache.sling.maven.bundlesupport.deploy.method;
 import static org.apache.sling.maven.bundlesupport.JsonSupport.JSON_MIME_TYPE;
 
 import java.io.File;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.List;
 
-import org.apache.commons.httpclient.HttpStatus;
-import org.apache.commons.httpclient.methods.PostMethod;
-import org.apache.commons.httpclient.methods.multipart.FilePart;
-import org.apache.commons.httpclient.methods.multipart.FilePartSource;
-import org.apache.commons.httpclient.methods.multipart.MultipartRequestEntity;
-import org.apache.commons.httpclient.methods.multipart.Part;
-import org.apache.commons.httpclient.methods.multipart.StringPart;
-import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.hc.client5.http.classic.methods.HttpPost;
+import org.apache.hc.client5.http.entity.UrlEncodedFormEntity;
+import org.apache.hc.client5.http.entity.mime.MultipartEntityBuilder;
+import org.apache.hc.client5.http.impl.classic.BasicHttpClientResponseHandler;
+import org.apache.hc.core5.http.ContentType;
+import org.apache.hc.core5.http.NameValuePair;
+import org.apache.hc.core5.http.message.BasicNameValuePair;
 import org.apache.sling.maven.bundlesupport.deploy.DeployContext;
 import org.apache.sling.maven.bundlesupport.deploy.DeployMethod;
 
 public class SlingPostDeployMethod implements DeployMethod {
 
     @Override
-    public void deploy(String targetURL, File file, String bundleSymbolicName, DeployContext context) throws MojoExecutionException {
+    public void deploy(URI targetURL, File file, String bundleSymbolicName, DeployContext context) throws IOException {
         /* truncate off trailing slash as this has special behaviorisms in
          * the SlingPostServlet around created node name conventions */
-        if (targetURL.endsWith("/")) {
-            targetURL = targetURL.substring(0, targetURL.length()-1);
-        }
+        targetURL = stripTrailingSlash(targetURL);
+        
         // append pseudo path after root URL to not get redirected for nothing
-        final PostMethod filePost = new PostMethod(targetURL);
+        final HttpPost filePost = new HttpPost(targetURL);
 
-        try {
-
-            Part[] parts = new Part[2];
-            // Add content type to force the configured mimeType value
-            parts[0] = new FilePart("*", new FilePartSource(
-                file.getName(), file), context.getMimeType(), null);
-            // Add TypeHint to have jar be uploaded as file (not as resource)
-            parts[1] = new StringPart("*@TypeHint", "nt:file");
-
-            /* Request JSON response from Sling instead of standard HTML, to
-             * reduce the payload size (if the PostServlet supports it). */
-            filePost.setRequestHeader("Accept", JSON_MIME_TYPE);
-            filePost.setRequestEntity(new MultipartRequestEntity(parts,
-                filePost.getParams()));
-
-            int status = context.getHttpClient().executeMethod(filePost);
-            // SlingPostServlet may return 200 or 201 on creation, accept both
-            if (status == HttpStatus.SC_OK || status == HttpStatus.SC_CREATED) {
-                context.getLog().info("Bundle installed");
-            } else {
-                String msg = "Installation failed, cause: "
-                    + HttpStatus.getStatusText(status);
-                if (context.isFailOnError()) {
-                    throw new MojoExecutionException(msg);
-                } else {
-                    context.getLog().error(msg);
-                }
-            }
-        } catch (Exception ex) {
-            throw new MojoExecutionException("Installation on " + targetURL
-                + " failed, cause: " + ex.getMessage(), ex);
-        } finally {
-            filePost.releaseConnection();
-        }
+        /* Request JSON response from Sling instead of standard HTML, to
+         * reduce the payload size (if the PostServlet supports it). */
+        filePost.setHeader("Accept", JSON_MIME_TYPE);
+        MultipartEntityBuilder builder = MultipartEntityBuilder.create();
+        builder.addTextBody("*@TypeHint", "nt:file");
+        builder.addBinaryBody("*", file, ContentType.create(context.getMimeType()), file.getName());
+        filePost.setEntity(builder.build());
+        
+        String response = context.getHttpClient().execute(filePost, new BasicHttpClientResponseHandler());
+        context.getLog().debug("Received response: " + response);
     }
 
     @Override
-    public void undeploy(String targetURL, File file, String bundleSymbolicName, DeployContext context) throws MojoExecutionException {
-        final PostMethod post = new PostMethod(getURLWithFilename(targetURL, file.getName()));
+    public void undeploy(URI targetURL, File file, String bundleSymbolicName, DeployContext context) throws IOException {
+        final HttpPost post = new HttpPost(getURLWithFilename(targetURL, file.getName()));
 
-        try {
-            // Add SlingPostServlet operation flag for deleting the content
-            Part[] parts = new Part[1];
-            parts[0] = new StringPart(":operation", "delete");
-            post.setRequestEntity(new MultipartRequestEntity(parts,
-                    post.getParams()));
-
-            // Request JSON response from Sling instead of standard HTML
-            post.setRequestHeader("Accept", JSON_MIME_TYPE);
-
-            int status = context.getHttpClient().executeMethod(post);
-            if (status == HttpStatus.SC_OK) {
-                context.getLog().info("Bundle uninstalled");
-            } else {
-                context.getLog().error(
-                    "Uninstall failed, cause: "
-                        + HttpStatus.getStatusText(status));
-            }
-        } catch (Exception ex) {
-            throw new MojoExecutionException("Uninstall from " + targetURL
-                + " failed, cause: " + ex.getMessage(), ex);
-        } finally {
-            post.releaseConnection();
-        }
+        List<NameValuePair> params = new ArrayList<>();
+        // Request JSON response from Sling instead of standard HTML
+        post.setHeader("Accept", JSON_MIME_TYPE);
+        params.add(new BasicNameValuePair(":operation", "delete"));
+        post.setEntity(new UrlEncodedFormEntity(params));
+        
+        String response = context.getHttpClient().execute(post, new BasicHttpClientResponseHandler());
+        context.getLog().debug("Received response: " + response);
     }
 
     /**
@@ -116,8 +79,20 @@ public class SlingPostDeployMethod implements DeployMethod {
      * @param targetURL the original requested targetURL to append fileName to
      * @param fileName the name of the file to append to the targetURL.
      */
-    private String getURLWithFilename(String targetURL, String fileName) {
-        return targetURL + (targetURL.endsWith("/") ? "" : "/") + fileName;
+    static URI getURLWithFilename(URI targetURL, String fileName) {
+        return targetURL.resolve(fileName);
     }
-    
+
+    static URI stripTrailingSlash(URI targetURL) {
+        if (targetURL.getPath().endsWith("/")) {
+            String path = targetURL.getPath().substring(0, targetURL.getPath().length()-1);
+            try {
+                return new URI(targetURL.getScheme(), targetURL.getUserInfo(), targetURL.getHost(), targetURL.getPort(), path, targetURL.getQuery(), targetURL.getFragment());
+            } catch (URISyntaxException e) {
+                throw new IllegalStateException("Could not create new URI from existing one", e); // should never happen
+            }
+        } else {
+            return targetURL;
+        }
+    }
 }

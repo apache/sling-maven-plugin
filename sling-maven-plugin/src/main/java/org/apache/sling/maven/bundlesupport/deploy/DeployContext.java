@@ -18,13 +18,13 @@
  */
 package org.apache.sling.maven.bundlesupport.deploy;
 
-import org.apache.commons.httpclient.HttpClient;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.maven.plugin.logging.Log;
 
 public final class DeployContext {
     
     private Log log;
-    private HttpClient httpClient;
+    private CloseableHttpClient httpClient;
     private boolean failOnError = true;
     private String bundleStartLevel = "20";
     private boolean bundleStart = true;
@@ -38,10 +38,10 @@ public final class DeployContext {
         this.log = log;
         return this;
     }
-    public HttpClient getHttpClient() {
+    public CloseableHttpClient getHttpClient() {
         return httpClient;
     }
-    public DeployContext httpClient(HttpClient httpClient) {
+    public DeployContext httpClient(CloseableHttpClient httpClient) {
         this.httpClient = httpClient;
         return this;
     }

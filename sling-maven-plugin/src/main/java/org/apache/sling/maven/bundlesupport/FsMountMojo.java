@@ -19,8 +19,7 @@ package org.apache.sling.maven.bundlesupport;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -28,10 +27,9 @@ import javax.json.JsonArray;
 import javax.json.JsonException;
 import javax.json.JsonObject;
 
-import org.apache.commons.httpclient.HttpException;
-import org.apache.commons.httpclient.methods.GetMethod;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.hc.client5.http.classic.methods.HttpGet;
+import org.apache.hc.client5.http.impl.classic.BasicHttpClientResponseHandler;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.repository.ArtifactRepository;
 import org.apache.maven.artifact.resolver.ArtifactResolutionRequest;
@@ -164,17 +162,17 @@ public class FsMountMojo extends AbstractFsMountMojo {
     }
 
     @Override
-    protected void configureSlingInitialContent(final String targetUrl, final File bundleFile) throws MojoExecutionException {
+    protected void configureSlingInitialContent(final URI targetUrl, final File bundleFile) throws MojoExecutionException {
         new SlingInitialContentMounter(getLog(), getHttpClient(), project).mount(targetUrl, bundleFile);
     }
 
     @Override
-    protected void configureFileVaultXml(String targetUrl, File jcrRootFile, File filterXmlFile) throws MojoExecutionException {
+    protected void configureFileVaultXml(URI targetUrl, File jcrRootFile, File filterXmlFile) throws MojoExecutionException {
         new FileVaultXmlMounter(getLog(), getHttpClient(), project).mount(targetUrl, jcrRootFile, filterXmlFile);
     }
 
     @Override
-    protected void ensureBundlesInstalled(String targetUrl) throws MojoExecutionException {
+    protected void ensureBundlesInstalled(URI targetUrl) throws MojoExecutionException {
         if (!deployFsResourceBundle) {
             return;
         }
@@ -203,33 +201,42 @@ public class FsMountMojo extends AbstractFsMountMojo {
         }
     }
     
-    private void deployBundle(Bundle bundle, String targetUrl) throws MojoExecutionException {
-        if (isBundleInstalled(bundle, targetUrl)) {
-            getLog().debug("Bundle " + bundle.getSymbolicName() + " " + bundle.getOsgiVersion() + " (or higher) already installed.");
-            return;
+    private void deployBundle(Bundle bundle, URI targetUrl) throws MojoExecutionException {
+        try {
+            if (isBundleInstalled(bundle, targetUrl)) {
+                getLog().debug("Bundle " + bundle.getSymbolicName() + " " + bundle.getOsgiVersion() + " (or higher) already installed.");
+                return;
+            }
+            
+            getLog().info("Installing Bundle " + bundle.getSymbolicName() + " " + bundle.getOsgiVersion() + " to "
+                        + targetUrl + " via " + deploymentMethod);
+            
+            File file = getArtifactFile(bundle, "jar");
+            deploymentMethod.execute().deploy(targetUrl, file, bundle.getSymbolicName(), new DeployContext()
+                    .log(getLog())
+                    .httpClient(getHttpClient())
+                    .failOnError(failOnError));
+        } catch(IOException e) {
+            throw new MojoExecutionException("Error deploying bundle " + bundle + " to " + targetUrl + ": " + e.getMessage(), e);
         }
-        
-        getLog().info("Installing Bundle " + bundle.getSymbolicName() + " " + bundle.getOsgiVersion() + " to "
-                    + targetUrl + " via " + deploymentMethod);
-        
-        File file = getArtifactFile(bundle, "jar");
-        deploymentMethod.execute().deploy(targetUrl, file, bundle.getSymbolicName(), new DeployContext()
-                .log(getLog())
-                .httpClient(getHttpClient())
-                .failOnError(failOnError));
     }
     
-    private boolean isBundlePrerequisitesPreconditionsMet(BundlePrerequisite bundlePrerequisite, String targetUrl) throws MojoExecutionException {
+    private boolean isBundlePrerequisitesPreconditionsMet(BundlePrerequisite bundlePrerequisite, URI targetUrl) throws MojoExecutionException {
         for (Bundle precondition : bundlePrerequisite.getPreconditions()) {
-            if (!isBundleInstalled(precondition, targetUrl)) {
-                getLog().debug("Bundle " + precondition.getSymbolicName() + " " + precondition.getOsgiVersion() + " (or higher) is not installed.");
-                return false;
+            try {
+                if (!isBundleInstalled(precondition, targetUrl)) {
+                    getLog().debug("Bundle " + precondition.getSymbolicName() + " " + precondition.getOsgiVersion() + " (or higher) is not installed.");
+                    return false;
+                }
+            } catch (IOException e) {
+                throw new MojoExecutionException("Reading bundle data for bundle " + precondition
+                            + " failed, cause: " + e.getMessage(), e);
             }
         }
         return true;
     }
     
-    private boolean isBundleInstalled(Bundle bundle, String targetUrl) throws MojoExecutionException {
+    private boolean isBundleInstalled(Bundle bundle, URI targetUrl) throws IOException {
         String installedVersionString = getBundleInstalledVersion(bundle.getSymbolicName(), targetUrl);
         if (StringUtils.isBlank(installedVersionString)) {
             return false;
@@ -245,41 +252,22 @@ public class FsMountMojo extends AbstractFsMountMojo {
      * @return Version number or null if non installed
      * @throws MojoExecutionException
      */
-    private String getBundleInstalledVersion(final String bundleSymbolicName, final String targetUrl) throws MojoExecutionException {
-        final String getUrl = targetUrl + "/bundles/" + bundleSymbolicName + ".json";
-        final GetMethod get = new GetMethod(getUrl);
+    private String getBundleInstalledVersion(final String bundleSymbolicName, final URI targetUrl) throws IOException {
+        final URI getUrl = targetUrl.resolve( "/bundles/" + bundleSymbolicName + ".json");
+        final HttpGet get = new HttpGet(getUrl);
 
+        final String jsonText = getHttpClient().execute(get, new BasicHttpClientResponseHandler());
         try {
-            final int status = getHttpClient().executeMethod(get);
-            if ( status == 200 ) {                
-                final String jsonText;
-                try (InputStream jsonResponse = get.getResponseBodyAsStream()) {
-                    jsonText = IOUtils.toString(jsonResponse, StandardCharsets.UTF_8);
-                }
-                try {
-                    JsonObject response = JsonSupport.parseObject(jsonText);
-                    JsonArray data = response.getJsonArray("data");
-                    if (data.size() > 0) {
-                        JsonObject bundleData = data.getJsonObject(0);
-                        return bundleData.getString("version");
-                    }
-                    
-                } catch (JsonException ex) {
-                    throw new MojoExecutionException("Reading bundle data from " + getUrl
-                            + " failed, cause: " + ex.getMessage(), ex);
-                }
+            JsonObject response = JsonSupport.parseObject(jsonText);
+            JsonArray data = response.getJsonArray("data");
+            if (!data.isEmpty()) {
+                JsonObject bundleData = data.getJsonObject(0);
+                return bundleData.getString("version");
             }
-        }
-        catch (HttpException ex) {
-            throw new MojoExecutionException("Reading bundle data from " + getUrl
+            
+        } catch (JsonException ex) {
+            throw new IOException("Reading bundle data from " + getUrl
                     + " failed, cause: " + ex.getMessage(), ex);
-        }
-        catch (IOException ex) {
-            throw new MojoExecutionException("Reading bundle data from " + getUrl
-                    + " failed, cause: " + ex.getMessage(), ex);
-        }
-        finally {
-            get.releaseConnection();
         }
         // no version detected, bundle is not installed
         return null;

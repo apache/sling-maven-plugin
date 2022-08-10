@@ -24,6 +24,7 @@ import static org.apache.jackrabbit.vault.util.Constants.ROOT_DIR;
 import static org.apache.jackrabbit.vault.util.Constants.VAULT_DIR;
 
 import java.io.File;
+import java.net.URI;
 import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
@@ -76,7 +77,7 @@ abstract class AbstractFsMountMojo extends AbstractBundlePostMojo {
             return;
         }
         
-        String targetUrl = getConsoleTargetURL();
+        URI targetUrl = getConsoleTargetURL();
         
         // ensure required bundles are installed
         ensureBundlesInstalled(targetUrl);
@@ -158,13 +159,13 @@ abstract class AbstractFsMountMojo extends AbstractBundlePostMojo {
         return null;
     }
     
-    protected abstract void configureSlingInitialContent(final String targetUrl, final File bundleFile)
+    protected abstract void configureSlingInitialContent(final URI targetUrl, final File bundleFile)
             throws MojoExecutionException;
 
-    protected abstract void configureFileVaultXml(final String targetUrl, final File jcrRootFile, final File filterXmlFile)
+    protected abstract void configureFileVaultXml(final URI targetUrl, final File jcrRootFile, final File filterXmlFile)
             throws MojoExecutionException;
     
-    protected abstract void ensureBundlesInstalled(final String targetUrl)
+    protected abstract void ensureBundlesInstalled(final URI targetUrl)
             throws MojoExecutionException;
 
 }

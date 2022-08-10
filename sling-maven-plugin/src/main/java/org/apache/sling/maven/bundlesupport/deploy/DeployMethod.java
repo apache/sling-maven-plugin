@@ -19,6 +19,8 @@
 package org.apache.sling.maven.bundlesupport.deploy;
 
 import java.io.File;
+import java.io.IOException;
+import java.net.URI;
 
 import org.apache.maven.plugin.MojoExecutionException;
 
@@ -35,7 +37,7 @@ public interface DeployMethod {
      * @param context Deploy context parameters
      * @throws MojoExecutionException Mojo execution execution
      */
-    void deploy(String targetURL, File file, String bundleSymbolicName, DeployContext context) throws MojoExecutionException;
+    void deploy(URI targetURL, File file, String bundleSymbolicName, DeployContext context) throws IOException;
     
     /**
      * Undeploy/uninstall a bundle on a Sling instance.
@@ -45,6 +47,6 @@ public interface DeployMethod {
      * @param context Deploy context parameters
      * @throws MojoExecutionException Mojo execution execution
      */
-    void undeploy(String targetURL, File file, String bundleSymbolicName, DeployContext context) throws MojoExecutionException;
+    void undeploy(URI targetURL, File file, String bundleSymbolicName, DeployContext context) throws IOException;
     
 }

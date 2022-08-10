@@ -20,11 +20,12 @@ package org.apache.sling.maven.bundlesupport.fsresource;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.httpclient.HttpClient;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.jackrabbit.vault.fs.api.PathFilterSet;
 import org.apache.jackrabbit.vault.fs.api.WorkspaceFilter;
 import org.apache.jackrabbit.vault.fs.config.ConfigurationException;
@@ -41,7 +42,7 @@ public final class FileVaultXmlMounter {
     private final Log log;
     private final FsMountHelper helper;
 
-    public FileVaultXmlMounter(Log log, HttpClient httpClient, MavenProject project) {
+    public FileVaultXmlMounter(Log log, CloseableHttpClient httpClient, MavenProject project) {
         this.log = log;
         this.helper = new FsMountHelper(log, httpClient, project);
     }
@@ -53,7 +54,7 @@ public final class FileVaultXmlMounter {
      * @param filterXmlFile FileVault Filter XML file
      * @throws MojoExecutionException Exception
      */
-    public void mount(final String targetUrl, final File jcrRootFile, final File filterXmlFile) throws MojoExecutionException {
+    public void mount(final URI targetUrl, final File jcrRootFile, final File filterXmlFile) throws MojoExecutionException {
         log.info("Trying to configure file system provider...");
 
         // create config for each path defined in filter
@@ -79,7 +80,7 @@ public final class FileVaultXmlMounter {
      * @param filterXmlFile FileVault Filter XML file
      * @throws MojoExecutionException Exception
      */
-    public void unmount(final String targetUrl, final File jcrRootFile, final File filterXmlFile) throws MojoExecutionException {
+    public void unmount(final URI targetUrl, final File jcrRootFile, final File filterXmlFile) throws MojoExecutionException {
         log.info("Removing file system provider configurations...");
 
         // remove all current configs for this project

@@ -19,6 +19,7 @@ package org.apache.sling.maven.bundlesupport.deploy.method;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+import java.net.URI;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -31,13 +32,14 @@ public class IntermediateUrisExtractorTest {
     public void extractPaths() {
 
         doTest("http://localhost:8080/apps/slingshot/install",
-                Arrays.asList("http://localhost:8080/apps/slingshot/install", "http://localhost:8080/apps/slingshot", "http://localhost:8080/apps" ));
+                Arrays.asList(
+                        URI.create("http://localhost:8080/apps/slingshot/install"), 
+                        URI.create("http://localhost:8080/apps/slingshot"), 
+                        URI.create("http://localhost:8080/apps" )));
     }
 
-    private void doTest(String input, List<String> expectedOutput) {
-
-        List<String> paths = IntermediateUrisExtractor.extractIntermediateUris(input);
-
+    private void doTest(String input, List<URI> expectedOutput) {
+        List<URI> paths = IntermediateUrisExtractor.extractIntermediateUris(URI.create(input));
         assertThat(paths, equalTo(expectedOutput));
     }
 
@@ -45,13 +47,16 @@ public class IntermediateUrisExtractorTest {
     public void extractPaths_trailingSlash() {
 
         doTest("http://localhost:8080/apps/slingshot/install/",
-                Arrays.asList("http://localhost:8080/apps/slingshot/install", "http://localhost:8080/apps/slingshot", "http://localhost:8080/apps" ));
+                Arrays.asList(
+                        URI.create("http://localhost:8080/apps/slingshot/install"),
+                        URI.create("http://localhost:8080/apps/slingshot"),
+                        URI.create("http://localhost:8080/apps") ));
     }
 
     @Test
     public void extractPaths_empty() {
 
-        doTest("http://localhost:8080", Collections.<String> emptyList());
+        doTest("http://localhost:8080", Collections.<URI> emptyList());
     }
 
 }

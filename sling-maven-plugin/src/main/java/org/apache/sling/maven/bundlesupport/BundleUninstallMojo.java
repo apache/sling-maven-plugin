@@ -19,6 +19,8 @@
 package org.apache.sling.maven.bundlesupport;
 
 import java.io.File;
+import java.io.IOException;
+import java.net.URI;
 
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
@@ -63,7 +65,7 @@ public class BundleUninstallMojo extends AbstractBundleInstallMojo {
             return;
         }
 
-        String targetURL = getTargetURL();
+        URI targetURL = getTargetURL();
 
         BundleDeploymentMethod deployMethod = getDeploymentMethod();
         getLog().info(
@@ -72,15 +74,26 @@ public class BundleUninstallMojo extends AbstractBundleInstallMojo {
 
         configure(targetURL, bundleFile);
 
-        deployMethod.execute().undeploy(targetURL, bundleFile, bundleName, new DeployContext()
-                .log(getLog())
-                .httpClient(getHttpClient())
-                .failOnError(failOnError)
-                .mimeType(mimeType));
+        try {
+            deployMethod.execute().undeploy(targetURL, bundleFile, bundleName, new DeployContext()
+                    .log(getLog())
+                    .httpClient(getHttpClient())
+                    .failOnError(failOnError)
+                    .mimeType(mimeType));
+            getLog().info("Bundle uninstalled successfully!");
+        } catch (IOException e) {
+            String msg = "Uninstall from " + targetURL
+                    + " failed, cause: " + e.getMessage();
+            if (failOnError) {
+                throw new MojoExecutionException(msg, e);
+            } else {
+                getLog().error(msg, e);
+            }
+        }
     }
 
     @Override
-    protected void configure(final String targetURL, final File file) throws MojoExecutionException {
+    protected void configure(final URI targetURL, final File file) throws MojoExecutionException {
         new SlingInitialContentMounter(getLog(), getHttpClient(), project).unmount(targetURL, file);
     }
     

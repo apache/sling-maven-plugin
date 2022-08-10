@@ -33,7 +33,7 @@ final class IntermediateUrisExtractor {
      * Extracts a list of intermediate paths from an URL.
      * 
      * <p>For instance, <tt>http://localhost:8080/apps/slingshot/install</tt> would have the following intermediate
-     * paths:
+     * URIs:
      * <ol>
      *   <li>http://localhost:8080/apps</li>
      *   <li>http://localhost:8080/apps/slingshot</li>
@@ -44,13 +44,11 @@ final class IntermediateUrisExtractor {
      * @param url the url to extract paths from
      * @return the intermediate paths, possibly empty
      */
-    public static List<String> extractIntermediateUris(String url) {
+    public static List<URI> extractIntermediateUris(URI uri) {
         
-        List<String> paths = new ArrayList<String>();
+        List<URI> paths = new ArrayList<>();
         
-        URI uri = URI.create(url);
         String path = uri.getPath();
-        
         StringBuilder accu = new StringBuilder();
         for ( String segment : path.split("/") ) {
 
@@ -63,7 +61,7 @@ final class IntermediateUrisExtractor {
             
             // don't add the root segment ( / ) 
             if ( segment.length() != 0 ) {
-                paths.add(0, uri.resolve(accu.toString()).toString());
+                paths.add(0, uri.resolve(accu.toString()));
             }
             
         }

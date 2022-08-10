@@ -20,129 +20,96 @@ package org.apache.sling.maven.bundlesupport.deploy.method;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.util.List;
 
-import org.apache.commons.httpclient.HttpException;
-import org.apache.commons.httpclient.HttpStatus;
-import org.apache.commons.httpclient.methods.DeleteMethod;
-import org.apache.commons.httpclient.methods.FileRequestEntity;
-import org.apache.commons.httpclient.methods.HeadMethod;
-import org.apache.commons.httpclient.methods.PutMethod;
-import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.hc.client5.http.HttpResponseException;
+import org.apache.hc.client5.http.classic.methods.HttpDelete;
+import org.apache.hc.client5.http.classic.methods.HttpHead;
+import org.apache.hc.client5.http.classic.methods.HttpPut;
+import org.apache.hc.client5.http.impl.classic.BasicHttpClientResponseHandler;
+import org.apache.hc.core5.http.ContentType;
+import org.apache.hc.core5.http.HttpStatus;
+import org.apache.hc.core5.http.io.entity.FileEntity;
 import org.apache.sling.maven.bundlesupport.deploy.DeployContext;
 import org.apache.sling.maven.bundlesupport.deploy.DeployMethod;
 
 public class WebDavPutDeployMethod implements DeployMethod {
 
     @Override
-    public void deploy(String targetURL, File file, String bundleSymbolicName, DeployContext context) throws MojoExecutionException {
-        boolean success = false;
-        int status;
-
+    public void deploy(URI targetURL, File file, String bundleSymbolicName, DeployContext context) throws IOException {
         try {
-            status = performPut(targetURL, file, context);
-            if (status >= 200 && status < 300) {
-                success = true;
-            } else if (status == HttpStatus.SC_CONFLICT) {
-
+            performPut(targetURL, file, context);
+        } catch (HttpResponseException e) {
+            if (e.getStatusCode() == HttpStatus.SC_CONFLICT) {
                 context.getLog().debug("Bundle not installed due missing parent folders. Attempting to create parent structure.");
                 createIntermediaryPaths(targetURL, context);
 
                 context.getLog().debug("Re-attempting bundle install after creating parent folders.");
-                status = performPut(targetURL, file, context);
-                if (status >= 200 && status < 300) {
-                    success = true;
-                }
+                performPut(targetURL, file, context);
             }
-
-            if (!success) {
-                String msg = "Installation failed, cause: "
-                    + HttpStatus.getStatusText(status);
-                if (context.isFailOnError()) {
-                    throw new MojoExecutionException(msg);
-                } else {
-                    context.getLog().error(msg);
-                }
-            }
-        } catch (Exception ex) {
-            throw new MojoExecutionException("Installation on " + targetURL
-                + " failed, cause: " + ex.getMessage(), ex);
         }
     }
 
     @Override
-    public void undeploy(String targetURL, File file, String bundleSymbolicName, DeployContext context) throws MojoExecutionException {
-        final DeleteMethod delete = new DeleteMethod(getURLWithFilename(targetURL, file.getName()));
+    public void undeploy(URI targetURL, File file, String bundleSymbolicName, DeployContext context) throws IOException {
+        final HttpDelete delete = new HttpDelete(SlingPostDeployMethod.getURLWithFilename(targetURL, file.getName()));
 
-        try {
-
-            int status = context.getHttpClient().executeMethod(delete);
-            if (status >= 200 && status < 300) {
-                context.getLog().info("Bundle uninstalled");
-            } else {
-                context.getLog().error(
-                    "Uninstall failed, cause: "
-                        + HttpStatus.getStatusText(status));
-            }
-        } catch (Exception ex) {
-            throw new MojoExecutionException("Uninstall from " + targetURL
-                + " failed, cause: " + ex.getMessage(), ex);
-        } finally {
-            delete.releaseConnection();
-        }
+        String response = context.getHttpClient().execute(delete, new BasicHttpClientResponseHandler());
+        context.getLog().debug("Received response: " + response);
     }
 
-    private int performPut(String targetURL, File file, DeployContext context) throws HttpException, IOException {
-        PutMethod filePut = new PutMethod(getURLWithFilename(targetURL, file.getName()));
-        try {
-            filePut.setRequestEntity(new FileRequestEntity(file, context.getMimeType()));
-            return context.getHttpClient().executeMethod(filePut);
-        } finally {
-            filePut.releaseConnection();
-        }
+    private void performPut(URI targetURL, File file, DeployContext context) throws IOException {
+        HttpPut filePut = new HttpPut(SlingPostDeployMethod.getURLWithFilename(targetURL, file.getName()));
+        filePut.setEntity(new FileEntity(file, ContentType.create(context.getMimeType())));
+        String response = context.getHttpClient().execute(filePut, new BasicHttpClientResponseHandler());
+        context.getLog().debug("Received response: " + response);
     }
 
-    private int performHead(String uri, DeployContext context) throws HttpException, IOException {
-        HeadMethod head = new HeadMethod(uri);
-        try {
-            return context.getHttpClient().executeMethod(head);
-        } finally {
-            head.releaseConnection();
-        }
+    private void performHead(URI uri, DeployContext context) throws IOException {
+        HttpHead head = new HttpHead(uri);
+        context.getHttpClient().execute(head, new BasicHttpClientResponseHandler());
+        // this never returns a body
     }
 
-    private int performMkCol(String uri, DeployContext context) throws IOException {
-        MkColMethod mkCol = new MkColMethod(uri);
-        try {
-            return context.getHttpClient().executeMethod(mkCol);
-        } finally {
-            mkCol.releaseConnection();
-        }
+    private void performMkCol(URI uri, DeployContext context) throws IOException {
+        WebDavMkCol mkCol = new WebDavMkCol(uri);
+        String response = context.getHttpClient().execute(mkCol, new BasicHttpClientResponseHandler());
+        context.getLog().debug("Received response: " + response);
     }
 
-    private void createIntermediaryPaths(String targetURL, DeployContext context) throws HttpException, IOException, MojoExecutionException {
+    private void createIntermediaryPaths(URI targetURL, DeployContext context) throws IOException {
         // extract all intermediate URIs (longest one first)
-        List<String> intermediateUris = IntermediateUrisExtractor.extractIntermediateUris(targetURL);
+        List<URI> intermediateUris = IntermediateUrisExtractor.extractIntermediateUris(targetURL);
 
         // 1. go up to the node in the repository which exists already (HEAD request towards the root node)
         String existingIntermediateUri = null;
         // go through all intermediate URIs (longest first)
-        for (String intermediateUri : intermediateUris) {
+        for (URI intermediateUri : intermediateUris) {
             // until one is existing
-            int result = performHead(intermediateUri, context);
-            // if the result is 200 (in case the default get servlet allows returning index files) or 403 (in case the default get servlet does no allow returning index files)
-            // we assume that the intermediate node exists already
-            if (result == HttpStatus.SC_OK || result == HttpStatus.SC_FORBIDDEN) {
-                existingIntermediateUri = intermediateUri;
-                break;
-            } else if (result != HttpStatus.SC_NOT_FOUND) {
-                throw new MojoExecutionException("Failed getting intermediate path at " + intermediateUri + "."
-                        + " Reason: " + HttpStatus.getStatusText(result));
+            try {
+                try {
+                    performHead(intermediateUri, context);
+                    // if the result is 200 (in case the default get servlet allows returning index files)
+                    break;
+                } catch (HttpResponseException e) {
+                    // or 403 (in case the default get servlet does no allow returning index files)
+                    if (e.getStatusCode() == HttpStatus.SC_FORBIDDEN) {
+                        // we assume that the intermediate node exists already
+                        break;
+                    } else if (e.getStatusCode() != HttpStatus.SC_NOT_FOUND) {
+                        throw e;
+                    }
+                }
+            }
+            catch (IOException e) {
+                throw new IOException("Failed getting intermediate path at " + intermediateUri + "."
+                        + " Reason: " + e.getMessage(), e);
             }
         }
 
         if (existingIntermediateUri == null) {
-            throw new MojoExecutionException(
+            throw new IOException(
                     "Could not find any intermediate path up until the root of " + targetURL + ".");
         }
 
@@ -155,25 +122,15 @@ public class WebDavPutDeployMethod implements DeployMethod {
 
         for (int index = startOfInexistingIntermediateUri - 1; index >= 0; index--) {
             // use MKCOL to create the intermediate paths
-            String intermediateUri = intermediateUris.get(index);
-            int result = performMkCol(intermediateUri, context);
-            if (result == HttpStatus.SC_CREATED || result == HttpStatus.SC_OK) {
+            URI intermediateUri = intermediateUris.get(index);
+            try {
+                performMkCol(intermediateUri, context);
                 context.getLog().debug("Intermediate path at " + intermediateUri + " successfully created");
-                continue;
-            } else {
-                throw new MojoExecutionException("Failed creating intermediate path at '" + intermediateUri + "'."
-                        + " Reason: " + HttpStatus.getStatusText(result));
+            } catch (IOException e) {
+                throw new IOException("Failed creating intermediate path at '" + intermediateUri + "'."
+                        + " Reason: " + e.getMessage());
             }
         }
     }
 
-    /**
-     * Returns the URL with the filename appended to it.
-     * @param targetURL the original requested targetURL to append fileName to
-     * @param fileName the name of the file to append to the targetURL.
-     */
-    private String getURLWithFilename(String targetURL, String fileName) {
-        return targetURL + (targetURL.endsWith("/") ? "" : "/") + fileName;
-    }
-    
 }

@@ -18,6 +18,7 @@
 package org.apache.sling.maven.bundlesupport;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.maven.plugin.MojoExecutionException;
@@ -29,18 +30,28 @@ import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.RepositorySystemSession;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.eclipse.aether.repository.RemoteRepository;
+import org.eclipse.aether.repository.RepositoryPolicy;
 import org.eclipse.aether.resolution.ArtifactRequest;
 import org.eclipse.aether.resolution.ArtifactResolutionException;
 import org.eclipse.aether.resolution.ArtifactResult;
 
 /**
  * Install an OSGi bundle from a given file path or Maven coordinates (resolved from the repository) to a running Sling instance.
+ * One of the following parameter sets must be set to determine the bundle to install:
+ * <ul>
+ * <li>{@link #bundleFileName}</li>
+ * <li>{@link #groupId}, {@link #artifactId}, {@link #version}, {@link #packaging} and optionally {@link #classifier}</li>
+ * <li>{@link #artifact}</li>
+ * </ul>
+ * 
+ * To install a bundle which has been built from the current Maven project rather use goal <a href="install-mojo.html">install</a>.
+ * For details refer to <a href="bundle-installation.html">Bundle Installation</a>.
  */
 @Mojo(name = "install-file", requiresProject = false)
 public class BundleInstallFileMojo extends AbstractBundleInstallMojo {
 
     /**
-     * The name of the generated JAR file.
+     * The path of the bundle file to install.
      */
     @Parameter(property="sling.file")
     private File bundleFileName;
@@ -76,7 +87,7 @@ public class BundleInstallFileMojo extends AbstractBundleInstallMojo {
     private String classifier;
 
     /**
-     * A string of the form groupId:artifactId:version[:packaging[:classifier]].
+     * A string of the form {@code groupId:artifactId:version[:packaging[:classifier]]}.
      */
     @Parameter(property="sling.artifact")
     private String artifact;
@@ -129,14 +140,24 @@ public class BundleInstallFileMojo extends AbstractBundleInstallMojo {
     }
 
     protected File resolveArtifact(org.eclipse.aether.artifact.Artifact artifact) throws MojoExecutionException {
-        ArtifactRequest req = new ArtifactRequest(artifact, repositories, null);
+        ArtifactRequest req = new ArtifactRequest(artifact, getRemoteRepositoriesWithUpdatePolicy(repositories, RepositoryPolicy.UPDATE_POLICY_ALWAYS), null);
         ArtifactResult resolutionResult;
         try {
             resolutionResult = repoSystem.resolveArtifact(repoSession, req);
             return resolutionResult.getArtifact().getFile();
-        } catch( ArtifactResolutionException e ) {
+        } catch (ArtifactResolutionException e) {
             throw new MojoExecutionException("Artifact " + artifact + " could not be resolved.", e);
         }
     }
 
+    private List<RemoteRepository> getRemoteRepositoriesWithUpdatePolicy(List<RemoteRepository> repositories, String updatePolicy) {
+        List<RemoteRepository> newRepositories = new ArrayList<>();
+        for (RemoteRepository repo : repositories) {
+            RemoteRepository.Builder builder = new RemoteRepository.Builder(repo);
+            RepositoryPolicy newPolicy = new RepositoryPolicy(repo.getPolicy(false).isEnabled(), updatePolicy, repo.getPolicy(false).getChecksumPolicy());
+            builder.setPolicy(newPolicy);
+            newRepositories.add(builder.build());
+        }
+        return newRepositories;
+    }
 }

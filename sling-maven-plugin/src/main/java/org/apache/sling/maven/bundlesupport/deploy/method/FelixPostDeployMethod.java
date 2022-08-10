@@ -19,93 +19,53 @@
 package org.apache.sling.maven.bundlesupport.deploy.method;
 
 import java.io.File;
+import java.io.IOException;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.commons.httpclient.HttpStatus;
-import org.apache.commons.httpclient.methods.PostMethod;
-import org.apache.commons.httpclient.methods.multipart.FilePart;
-import org.apache.commons.httpclient.methods.multipart.FilePartSource;
-import org.apache.commons.httpclient.methods.multipart.MultipartRequestEntity;
-import org.apache.commons.httpclient.methods.multipart.Part;
-import org.apache.commons.httpclient.methods.multipart.StringPart;
-import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.hc.client5.http.classic.methods.HttpPost;
+import org.apache.hc.client5.http.entity.UrlEncodedFormEntity;
+import org.apache.hc.client5.http.entity.mime.MultipartEntityBuilder;
+import org.apache.hc.client5.http.impl.classic.BasicHttpClientResponseHandler;
+import org.apache.hc.core5.http.NameValuePair;
+import org.apache.hc.core5.http.message.BasicNameValuePair;
 import org.apache.sling.maven.bundlesupport.deploy.DeployContext;
 import org.apache.sling.maven.bundlesupport.deploy.DeployMethod;
 
 public class FelixPostDeployMethod implements DeployMethod {
 
     @Override
-    public void deploy(String targetURL, File file, String bundleSymbolicName, DeployContext context) throws MojoExecutionException {
+    public void deploy(URI targetURL, File file, String bundleSymbolicName, DeployContext context) throws IOException {
 
         // append pseudo path after root URL to not get redirected for nothing
-        final PostMethod filePost = new PostMethod(targetURL + "/install");
+        final HttpPost filePost = new HttpPost(targetURL.resolve("/install"));
 
-        try {
-            // set referrer
-            filePost.setRequestHeader("referer", "about:blank");
-
-            List<Part> partList = new ArrayList<Part>();
-            partList.add(new StringPart("action", "install"));
-            partList.add(new StringPart("_noredir_", "_noredir_"));
-            partList.add(new FilePart("bundlefile", new FilePartSource(
-                file.getName(), file)));
-            partList.add(new StringPart("bundlestartlevel", context.getBundleStartLevel()));
-
-            if (context.isBundleStart()) {
-                partList.add(new StringPart("bundlestart", "start"));
-            }
-
-            if (context.isRefreshPackages()) {
-                partList.add(new StringPart("refreshPackages", "true"));
-            }
-
-            Part[] parts = partList.toArray(new Part[partList.size()]);
-
-            filePost.setRequestEntity(new MultipartRequestEntity(parts,
-                filePost.getParams()));
-
-            int status = context.getHttpClient().executeMethod(filePost);
-            if (status == HttpStatus.SC_OK) {
-                context.getLog().info("Bundle installed");
-            } else {
-                String msg = "Installation failed, cause: "
-                    + HttpStatus.getStatusText(status);
-                if (context.isFailOnError()) {
-                    throw new MojoExecutionException(msg);
-                } else {
-                    context.getLog().error(msg);
-                }
-            }
-        } catch (Exception ex) {
-            throw new MojoExecutionException("Installation on " + targetURL
-                + " failed, cause: " + ex.getMessage(), ex);
-        } finally {
-            filePost.releaseConnection();
+        // set referrer
+        filePost.setHeader("referer", "about:blank");
+        MultipartEntityBuilder builder = MultipartEntityBuilder.create();
+        builder.addTextBody("action", "install");
+        builder.addTextBody("_noredir_", "_noredir_");
+        builder.addTextBody("bundlestartlevel", context.getBundleStartLevel());
+        if (context.isBundleStart()) {
+            builder.addTextBody("bundlestart", "start");
         }
+        if (context.isRefreshPackages()) {
+            builder.addTextBody("refreshPackages", "true");
+        }
+        builder.addBinaryBody(file.getName(), file);
+        filePost.setEntity(builder.build());
+        context.getHttpClient().execute(filePost, new BasicHttpClientResponseHandler());
     }
 
     @Override
-    public void undeploy(String targetURL, File file, String bundleSymbolicName, DeployContext context) throws MojoExecutionException {
-        final PostMethod post = new PostMethod(targetURL + "/bundles/" + bundleSymbolicName);
-        post.addParameter("action", "uninstall");
+    public void undeploy(URI targetURL, File file, String bundleSymbolicName, DeployContext context) throws IOException {
+        final HttpPost post = new HttpPost(targetURL.resolve("/bundles/" + bundleSymbolicName));
+        List<NameValuePair> params = new ArrayList<>();
+        params.add(new BasicNameValuePair("action", "uninstall"));
+        post.setEntity(new UrlEncodedFormEntity(params));
 
-        try {
-
-            int status = context.getHttpClient().executeMethod(post);
-            if (status == HttpStatus.SC_OK) {
-                context.getLog().info("Bundle uninstalled");
-            } else {
-                context.getLog().error(
-                    "Uninstall failed, cause: "
-                        + HttpStatus.getStatusText(status));
-            }
-        } catch (Exception ex) {
-            throw new MojoExecutionException("Uninstall from " + targetURL
-                + " failed, cause: " + ex.getMessage(), ex);
-        } finally {
-            post.releaseConnection();
-        }
+        context.getHttpClient().execute(post, new BasicHttpClientResponseHandler());
     }
 
 }
