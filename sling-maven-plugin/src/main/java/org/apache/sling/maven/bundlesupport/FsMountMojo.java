@@ -30,6 +30,7 @@ import javax.json.JsonObject;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.apache.hc.client5.http.impl.classic.BasicHttpClientResponseHandler;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.repository.ArtifactRepository;
 import org.apache.maven.artifact.resolver.ArtifactResolutionRequest;
@@ -162,17 +163,17 @@ public class FsMountMojo extends AbstractFsMountMojo {
     }
 
     @Override
-    protected void configureSlingInitialContent(final URI targetUrl, final File bundleFile) throws MojoExecutionException {
+    protected void configureSlingInitialContent(CloseableHttpClient httpClient, final URI targetUrl, final File bundleFile) throws MojoExecutionException {
         new SlingInitialContentMounter(getLog(), getHttpClient(), project).mount(targetUrl, bundleFile);
     }
 
     @Override
-    protected void configureFileVaultXml(URI targetUrl, File jcrRootFile, File filterXmlFile) throws MojoExecutionException {
-        new FileVaultXmlMounter(getLog(), getHttpClient(), project).mount(targetUrl, jcrRootFile, filterXmlFile);
+    protected void configureFileVaultXml(CloseableHttpClient httpClient, URI targetUrl, File jcrRootFile, File filterXmlFile) throws MojoExecutionException {
+        new FileVaultXmlMounter(getLog(), httpClient, project).mount(targetUrl, jcrRootFile, filterXmlFile);
     }
 
     @Override
-    protected void ensureBundlesInstalled(URI targetUrl) throws MojoExecutionException {
+    protected void ensureBundlesInstalled(CloseableHttpClient httpClient,URI targetUrl) throws MojoExecutionException {
         if (!deployFsResourceBundle) {
             return;
         }
@@ -192,18 +193,18 @@ public class FsMountMojo extends AbstractFsMountMojo {
         }
         
         for (BundlePrerequisite bundlePrerequisite : deployFsResourceBundlePrerequisites) {
-            if (isBundlePrerequisitesPreconditionsMet(bundlePrerequisite, targetUrl)) {
+            if (isBundlePrerequisitesPreconditionsMet(httpClient, bundlePrerequisite, targetUrl)) {
                 for (Bundle bundle : bundlePrerequisite.getBundles()) {
-                    deployBundle(bundle, targetUrl);
+                    deployBundle(httpClient, bundle, targetUrl);
                 }
                 break;
             }
         }
     }
     
-    private void deployBundle(Bundle bundle, URI targetUrl) throws MojoExecutionException {
+    private void deployBundle(CloseableHttpClient httpClient, Bundle bundle, URI targetUrl) throws MojoExecutionException {
         try {
-            if (isBundleInstalled(bundle, targetUrl)) {
+            if (isBundleInstalled(httpClient, bundle, targetUrl)) {
                 getLog().debug("Bundle " + bundle.getSymbolicName() + " " + bundle.getOsgiVersion() + " (or higher) already installed.");
                 return;
             }
@@ -214,17 +215,17 @@ public class FsMountMojo extends AbstractFsMountMojo {
             File file = getArtifactFile(bundle, "jar");
             deploymentMethod.execute().deploy(targetUrl, file, bundle.getSymbolicName(), new DeployContext()
                     .log(getLog())
-                    .httpClient(getHttpClient())
+                    .httpClient(httpClient)
                     .failOnError(failOnError));
         } catch(IOException e) {
             throw new MojoExecutionException("Error deploying bundle " + bundle + " to " + targetUrl + ": " + e.getMessage(), e);
         }
     }
     
-    private boolean isBundlePrerequisitesPreconditionsMet(BundlePrerequisite bundlePrerequisite, URI targetUrl) throws MojoExecutionException {
+    private boolean isBundlePrerequisitesPreconditionsMet(CloseableHttpClient httpClient, BundlePrerequisite bundlePrerequisite, URI targetUrl) throws MojoExecutionException {
         for (Bundle precondition : bundlePrerequisite.getPreconditions()) {
             try {
-                if (!isBundleInstalled(precondition, targetUrl)) {
+                if (!isBundleInstalled(httpClient, precondition, targetUrl)) {
                     getLog().debug("Bundle " + precondition.getSymbolicName() + " " + precondition.getOsgiVersion() + " (or higher) is not installed.");
                     return false;
                 }
@@ -236,8 +237,8 @@ public class FsMountMojo extends AbstractFsMountMojo {
         return true;
     }
     
-    private boolean isBundleInstalled(Bundle bundle, URI targetUrl) throws IOException {
-        String installedVersionString = getBundleInstalledVersion(bundle.getSymbolicName(), targetUrl);
+    private boolean isBundleInstalled(CloseableHttpClient httpClient, Bundle bundle, URI targetUrl) throws IOException {
+        String installedVersionString = getBundleInstalledVersion(httpClient, bundle.getSymbolicName(), targetUrl);
         if (StringUtils.isBlank(installedVersionString)) {
             return false;
         }
@@ -248,15 +249,16 @@ public class FsMountMojo extends AbstractFsMountMojo {
 
     /**
      * Get version of fsresource bundle that is installed in the instance.
+     * @param httpClient the http client to use
      * @param targetUrl Target URL
      * @return Version number or null if non installed
      * @throws MojoExecutionException
      */
-    private String getBundleInstalledVersion(final String bundleSymbolicName, final URI targetUrl) throws IOException {
+    private String getBundleInstalledVersion(CloseableHttpClient httpClient, final String bundleSymbolicName, final URI targetUrl) throws IOException {
         final URI getUrl = targetUrl.resolve( "/bundles/" + bundleSymbolicName + ".json");
         final HttpGet get = new HttpGet(getUrl);
 
-        final String jsonText = getHttpClient().execute(get, new BasicHttpClientResponseHandler());
+        final String jsonText = httpClient.execute(get, new BasicHttpClientResponseHandler());
         try {
             JsonObject response = JsonSupport.parseObject(jsonText);
             JsonArray data = response.getJsonArray("data");

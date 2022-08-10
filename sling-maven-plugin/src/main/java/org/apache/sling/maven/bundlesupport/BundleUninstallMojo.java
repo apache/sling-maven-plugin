@@ -22,6 +22,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
@@ -72,12 +73,12 @@ public class BundleUninstallMojo extends AbstractBundleInstallMojo {
             "Unistalling Bundle " + bundleName + " from "
                 + targetURL + " via " + deployMethod);
 
-        configure(targetURL, bundleFile);
 
-        try {
+        try (CloseableHttpClient httpClient = getHttpClient()){
+            configure(httpClient, targetURL, bundleFile);
             deployMethod.execute().undeploy(targetURL, bundleFile, bundleName, new DeployContext()
                     .log(getLog())
-                    .httpClient(getHttpClient())
+                    .httpClient(httpClient)
                     .failOnError(failOnError)
                     .mimeType(mimeType));
             getLog().info("Bundle uninstalled successfully!");
@@ -93,8 +94,8 @@ public class BundleUninstallMojo extends AbstractBundleInstallMojo {
     }
 
     @Override
-    protected void configure(final URI targetURL, final File file) throws MojoExecutionException {
-        new SlingInitialContentMounter(getLog(), getHttpClient(), project).unmount(targetURL, file);
+    protected void configure(CloseableHttpClient httpClient, final URI targetURL, final File file) throws MojoExecutionException {
+        new SlingInitialContentMounter(getLog(), httpClient, project).unmount(targetURL, file);
     }
     
 }

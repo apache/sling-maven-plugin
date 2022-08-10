@@ -22,6 +22,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
@@ -133,16 +134,19 @@ abstract class AbstractBundleInstallMojo extends AbstractBundlePostMojo {
             "Installing Bundle " + bundleName + "(" + bundleFile + ") to "
                 + targetURL + " via " + deploymentMethod);
 
-        try {
+        try (CloseableHttpClient httpClient = getHttpClient()){
             deploymentMethod.execute().deploy(targetURL, bundleFile, bundleName, new DeployContext()
                 .log(getLog())
-                .httpClient(getHttpClient())
+                .httpClient(httpClient)
                 .failOnError(failOnError)
                 .bundleStartLevel(bundleStartLevel)
                 .bundleStart(bundleStart)
                 .mimeType(mimeType)
                 .refreshPackages(refreshPackages));
             getLog().info("Bundle installed");
+            if ( mountByFS ) {
+                configure(httpClient, getConsoleTargetURL(), bundleFile);
+            }
         } catch (IOException e) {
             String msg = "Installation failed, cause: "
                 + e.getMessage();
@@ -152,13 +156,10 @@ abstract class AbstractBundleInstallMojo extends AbstractBundlePostMojo {
                 getLog().error(msg, e);
             }
         }
-        if ( mountByFS ) {
-            configure(getConsoleTargetURL(), bundleFile);
-        }
     }
     
-    protected void configure(final URI targetURL, final File file) throws MojoExecutionException {
-        new SlingInitialContentMounter(getLog(), getHttpClient(), project).mount(targetURL, file);
+    protected void configure(CloseableHttpClient httpClient, final URI targetURL, final File file) throws MojoExecutionException {
+        new SlingInitialContentMounter(getLog(), httpClient, project).mount(targetURL, file);
     }
 
     /**

@@ -24,10 +24,12 @@ import static org.apache.jackrabbit.vault.util.Constants.ROOT_DIR;
 import static org.apache.jackrabbit.vault.util.Constants.VAULT_DIR;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.URI;
 import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.maven.model.Resource;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -78,37 +80,39 @@ abstract class AbstractFsMountMojo extends AbstractBundlePostMojo {
         }
         
         URI targetUrl = getConsoleTargetURL();
-        
-        // ensure required bundles are installed
-        ensureBundlesInstalled(targetUrl);
-        
-        // check for Sling-Initial-Content
-        File bundleFile = new File(bundleFileName);
-        if (bundleFile.exists()) {
-            configureSlingInitialContent(targetUrl, bundleFile);
-            return;
+        try (CloseableHttpClient httpClient = getHttpClient()) {
+            // ensure required bundles are installed
+            ensureBundlesInstalled(httpClient, targetUrl);
+            
+            // check for Sling-Initial-Content
+            File bundleFile = new File(bundleFileName);
+            if (bundleFile.exists()) {
+                configureSlingInitialContent(httpClient, targetUrl, bundleFile);
+                return;
+            }
+            
+            // try to detect filevault layout
+            File jcrRootFile;
+            File filterXmlFile;
+            if (fileVaultJcrRootFile != null) {
+                jcrRootFile = fileVaultJcrRootFile;
+            }
+            else {
+                jcrRootFile = detectJcrRootFile();
+            }
+            if (fileVaultFilterXmlFile != null) {
+                filterXmlFile = fileVaultFilterXmlFile;
+            }
+            else {
+                filterXmlFile = detectFilterXmlFile();
+            }
+            if (jcrRootFile != null && jcrRootFile.exists() && filterXmlFile != null && filterXmlFile.exists()) {
+                configureFileVaultXml(httpClient, targetUrl, jcrRootFile, filterXmlFile);
+                return;
+            }
+        } catch (IOException e) {
+            getLog().error("Could not close underlying HTTP client" + e.getMessage(),  e);
         }
-        
-        // try to detect filevault layout
-        File jcrRootFile;
-        File filterXmlFile;
-        if (fileVaultJcrRootFile != null) {
-            jcrRootFile = fileVaultJcrRootFile;
-        }
-        else {
-            jcrRootFile = detectJcrRootFile();
-        }
-        if (fileVaultFilterXmlFile != null) {
-            filterXmlFile = fileVaultFilterXmlFile;
-        }
-        else {
-            filterXmlFile = detectFilterXmlFile();
-        }
-        if (jcrRootFile != null && jcrRootFile.exists() && filterXmlFile != null && filterXmlFile.exists()) {
-            configureFileVaultXml(targetUrl, jcrRootFile, filterXmlFile);
-            return;
-        }
-        
         getLog().info("No Bundle with initial content or FileVault content package found - skipping.");
     }
 
@@ -159,13 +163,13 @@ abstract class AbstractFsMountMojo extends AbstractBundlePostMojo {
         return null;
     }
     
-    protected abstract void configureSlingInitialContent(final URI targetUrl, final File bundleFile)
+    protected abstract void configureSlingInitialContent(CloseableHttpClient httpClient, final URI targetUrl, final File bundleFile)
             throws MojoExecutionException;
 
-    protected abstract void configureFileVaultXml(final URI targetUrl, final File jcrRootFile, final File filterXmlFile)
+    protected abstract void configureFileVaultXml(CloseableHttpClient httpClient, final URI targetUrl, final File jcrRootFile, final File filterXmlFile)
             throws MojoExecutionException;
     
-    protected abstract void ensureBundlesInstalled(final URI targetUrl)
+    protected abstract void ensureBundlesInstalled(CloseableHttpClient httpClient, final URI targetUrl)
             throws MojoExecutionException;
 
 }

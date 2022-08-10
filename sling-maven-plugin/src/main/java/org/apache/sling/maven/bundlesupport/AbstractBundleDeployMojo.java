@@ -33,6 +33,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.hc.client5.http.classic.methods.HttpPost;
 import org.apache.hc.client5.http.entity.mime.MultipartEntityBuilder;
 import org.apache.hc.client5.http.impl.classic.BasicHttpClientResponseHandler;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Parameter;
 
@@ -88,8 +89,8 @@ abstract class AbstractBundleDeployMojo extends AbstractBundlePostMojo {
 
         getLog().info(
             "Deploying Bundle " + bundleName + "(" + jarFile + ") to " + obr);
-        try {
-            this.post(this.obr, jarFile);
+        try (CloseableHttpClient httpClient = getHttpClient()) {
+            this.post(httpClient, this.obr, jarFile);
             getLog().info("Bundle deployed");
         }
         catch (IOException ex) {
@@ -98,14 +99,14 @@ abstract class AbstractBundleDeployMojo extends AbstractBundlePostMojo {
         }
     }
 
-    private void post(String targetURL, File file)
+    private void post(CloseableHttpClient httpClient, String targetURL, File file)
             throws IOException {
         HttpPost filePost = new HttpPost(targetURL);
         MultipartEntityBuilder builder = MultipartEntityBuilder.create();
         builder.addTextBody("_noredir_", "_noredir_");
         builder.addBinaryBody(file.getName(), file);
         filePost.setEntity(builder.build());
-        String response = getHttpClient().execute(filePost, new BasicHttpClientResponseHandler());
+        String response = httpClient.execute(filePost, new BasicHttpClientResponseHandler());
         getLog().debug("Received response: " + response);
     }
 
