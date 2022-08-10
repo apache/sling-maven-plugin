@@ -83,7 +83,7 @@ public class WebDavPutDeployMethod implements DeployMethod {
         List<URI> intermediateUris = IntermediateUrisExtractor.extractIntermediateUris(targetURL);
 
         // 1. go up to the node in the repository which exists already (HEAD request towards the root node)
-        String existingIntermediateUri = null;
+        URI existingIntermediateUri = null;
         // go through all intermediate URIs (longest first)
         for (URI intermediateUri : intermediateUris) {
             // until one is existing
@@ -91,11 +91,13 @@ public class WebDavPutDeployMethod implements DeployMethod {
                 try {
                     performHead(intermediateUri, context);
                     // if the result is 200 (in case the default get servlet allows returning index files)
+                    existingIntermediateUri = intermediateUri;
                     break;
                 } catch (HttpResponseException e) {
                     // or 403 (in case the default get servlet does no allow returning index files)
                     if (e.getStatusCode() == HttpStatus.SC_FORBIDDEN) {
                         // we assume that the intermediate node exists already
+                        existingIntermediateUri = intermediateUri;
                         break;
                     } else if (e.getStatusCode() != HttpStatus.SC_NOT_FOUND) {
                         throw e;
