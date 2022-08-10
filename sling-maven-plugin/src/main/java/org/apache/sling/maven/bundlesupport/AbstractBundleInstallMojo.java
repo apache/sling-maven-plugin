@@ -30,7 +30,7 @@ import org.apache.sling.maven.bundlesupport.deploy.BundleDeploymentMethod;
 import org.apache.sling.maven.bundlesupport.deploy.DeployContext;
 import org.apache.sling.maven.bundlesupport.fsresource.SlingInitialContentMounter;
 
-abstract class AbstractBundleInstallMojo extends AbstractBundlePostMojo {
+abstract class AbstractBundleInstallMojo extends AbstractBundleRequestMojo {
 
     /**
      * If a PUT via WebDAV should be used instead of the standard POST to the
@@ -132,7 +132,7 @@ abstract class AbstractBundleInstallMojo extends AbstractBundlePostMojo {
         BundleDeploymentMethod deploymentMethod = getDeploymentMethod();
         getLog().info(
             "Installing Bundle " + bundleName + "(" + bundleFile + ") to "
-                + targetURL + " via " + deploymentMethod);
+                + targetURL + " via " + deploymentMethod + "...");
 
         try (CloseableHttpClient httpClient = getHttpClient()){
             deploymentMethod.execute().deploy(targetURL, bundleFile, bundleName, new DeployContext()
@@ -143,7 +143,7 @@ abstract class AbstractBundleInstallMojo extends AbstractBundlePostMojo {
                 .bundleStart(bundleStart)
                 .mimeType(mimeType)
                 .refreshPackages(refreshPackages));
-            getLog().info("Bundle installed");
+            getLog().info("Bundle installed successfully");
             if ( mountByFS ) {
                 configure(httpClient, getConsoleTargetURL(), bundleFile);
             }

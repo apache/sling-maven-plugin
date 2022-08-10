@@ -21,6 +21,7 @@ package org.apache.sling.maven.bundlesupport.deploy.method;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.util.Arrays;
 import java.util.List;
 
 import org.apache.hc.client5.http.HttpResponseException;
@@ -28,8 +29,13 @@ import org.apache.hc.client5.http.classic.methods.HttpDelete;
 import org.apache.hc.client5.http.classic.methods.HttpHead;
 import org.apache.hc.client5.http.classic.methods.HttpPut;
 import org.apache.hc.client5.http.impl.classic.BasicHttpClientResponseHandler;
+import org.apache.hc.core5.http.ClassicHttpResponse;
 import org.apache.hc.core5.http.ContentType;
+import org.apache.hc.core5.http.HttpEntity;
+import org.apache.hc.core5.http.HttpException;
 import org.apache.hc.core5.http.HttpStatus;
+import org.apache.hc.core5.http.io.HttpClientResponseHandler;
+import org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.apache.hc.core5.http.io.entity.FileEntity;
 import org.apache.sling.maven.bundlesupport.deploy.DeployContext;
 import org.apache.sling.maven.bundlesupport.deploy.DeployMethod;
@@ -54,16 +60,21 @@ public class WebDavPutDeployMethod implements DeployMethod {
     @Override
     public void undeploy(URI targetURL, File file, String bundleSymbolicName, DeployContext context) throws IOException {
         final HttpDelete delete = new HttpDelete(SlingPostDeployMethod.getURLWithFilename(targetURL, file.getName()));
-
-        String response = context.getHttpClient().execute(delete, new BasicHttpClientResponseHandler());
-        context.getLog().debug("Received response: " + response);
+        // sanity check on response
+        // must answer 204 (no content)
+        // https://github.com/apache/jackrabbit/blob/88490006e6bdba0b0ad52d209b1bfa040477c2ec/jackrabbit-webdav/src/main/java/org/apache/jackrabbit/webdav/server/AbstractWebdavServlet.java#L763
+        Integer status = context.getHttpClient().execute(delete, new ResponseCodeEnforcingResponseHandler(HttpStatus.SC_NO_CONTENT));
+        context.getLog().debug("Received status code " + status);
     }
 
     private void performPut(URI targetURL, File file, DeployContext context) throws IOException {
         HttpPut filePut = new HttpPut(SlingPostDeployMethod.getURLWithFilename(targetURL, file.getName()));
         filePut.setEntity(new FileEntity(file, ContentType.create(context.getMimeType())));
-        String response = context.getHttpClient().execute(filePut, new BasicHttpClientResponseHandler());
-        context.getLog().debug("Received response: " + response);
+        // sanity check on response (has really the right servlet answered?)
+        // check status code, must be either 201 (created) for new resources or 204 (no content) for updated existing resources
+        // https://github.com/apache/jackrabbit/blob/88490006e6bdba0b0ad52d209b1bfa040477c2ec/jackrabbit-webdav/src/main/java/org/apache/jackrabbit/webdav/server/AbstractWebdavServlet.java#L707
+        Integer status = context.getHttpClient().execute(filePut, new ResponseCodeEnforcingResponseHandler(HttpStatus.SC_NO_CONTENT, HttpStatus.SC_CREATED));
+        context.getLog().debug("Received status code " + status);
     }
 
     private void performHead(URI uri, DeployContext context) throws IOException {
@@ -72,10 +83,32 @@ public class WebDavPutDeployMethod implements DeployMethod {
         // this never returns a body
     }
 
+    private static final class ResponseCodeEnforcingResponseHandler implements HttpClientResponseHandler<Integer> {
+
+        private final List<Integer> allowedCodes;
+        public ResponseCodeEnforcingResponseHandler(Integer... allowedCodes) {
+            this.allowedCodes = Arrays.asList(allowedCodes);
+        }
+
+        @Override
+        public Integer handleResponse(ClassicHttpResponse response) throws HttpException, IOException {
+            final HttpEntity entity = response.getEntity();
+            EntityUtils.consume(entity);
+            if (allowedCodes.contains(response.getCode())) {
+                throw new HttpResponseException(response.getCode(), response.getReasonPhrase());
+            }
+            return null;
+        }
+        
+    }
+
     private void performMkCol(URI uri, DeployContext context) throws IOException {
         WebDavMkCol mkCol = new WebDavMkCol(uri);
         String response = context.getHttpClient().execute(mkCol, new BasicHttpClientResponseHandler());
-        context.getLog().debug("Received response: " + response);
+        context.getLog().info("Received response: " + response);
+        // must be 201 (created)
+        // https://github.com/apache/jackrabbit/blob/88490006e6bdba0b0ad52d209b1bfa040477c2ec/jackrabbit-webdav/src/main/java/org/apache/jackrabbit/webdav/server/AbstractWebdavServlet.java#L746
+        
     }
 
     private void createIntermediaryPaths(URI targetURL, DeployContext context) throws IOException {

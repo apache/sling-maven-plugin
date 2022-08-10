@@ -69,13 +69,13 @@ public class BundleUninstallMojo extends AbstractBundleInstallMojo {
         URI targetURL = getTargetURL();
 
         BundleDeploymentMethod deployMethod = getDeploymentMethod();
-        getLog().info(
-            "Unistalling Bundle " + bundleName + " from "
-                + targetURL + " via " + deployMethod);
 
 
         try (CloseableHttpClient httpClient = getHttpClient()){
             configure(httpClient, targetURL, bundleFile);
+            getLog().info(
+                    "Uninstalling Bundle " + bundleName + " from "
+                            + targetURL + " via " + deployMethod + "...");
             deployMethod.execute().undeploy(targetURL, bundleFile, bundleName, new DeployContext()
                     .log(getLog())
                     .httpClient(httpClient)

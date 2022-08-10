@@ -21,6 +21,7 @@ package org.apache.sling.maven.bundlesupport;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 
@@ -41,7 +42,7 @@ import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugins.annotations.Parameter;
 
-abstract class AbstractBundlePostMojo extends AbstractMojo {
+abstract class AbstractBundleRequestMojo extends AbstractMojo {
 
     /**
      * The URL of the running Sling instance.
@@ -154,7 +155,7 @@ abstract class AbstractBundlePostMojo extends AbstractMojo {
     }
 
     /**
-     * @return Returns the combination of <code>sling.url</code> and <code>sling.urlSuffix</code>.
+     * @return Returns the combination of <code>sling.url</code> and <code>sling.urlSuffix</code>. Always ends with "/".
      */
     protected URI getTargetURL() {
         final URI targetURL;
@@ -163,18 +164,31 @@ abstract class AbstractBundlePostMojo extends AbstractMojo {
         } else {
             targetURL = slingUrl;
         }
-        return targetURL;
+        return addTrailingSlash(targetURL);
     }
 
     /**
-     * @return Returns the combination of <code>sling.console.url</code> and <code>sling.urlSuffix</code>.
+     * @return Returns the combination of <code>sling.console.url</code> and <code>sling.urlSuffix</code>. Always ends with "/".
      */
     protected URI getConsoleTargetURL() {
         URI targetURL = slingConsoleUrl != null ? slingConsoleUrl : slingUrl;
         if (slingUrlSuffix != null) {
             targetURL = targetURL.resolve(slingUrlSuffix);
         }
-        return targetURL;
+        return addTrailingSlash(targetURL);
+    }
+
+    public static URI addTrailingSlash(URI targetURL) {
+        if (!targetURL.getPath().endsWith("/")) {
+            String path = targetURL.getPath()+"/";
+            try {
+                return new URI(targetURL.getScheme(), targetURL.getUserInfo(), targetURL.getHost(), targetURL.getPort(), path, targetURL.getQuery(), targetURL.getFragment());
+            } catch (URISyntaxException e) {
+                throw new IllegalStateException("Could not create new URI from existing one", e); // should never happen
+            }
+        } else {
+            return targetURL;
+        }
     }
 
     /**
@@ -195,6 +209,7 @@ abstract class AbstractBundlePostMojo extends AbstractMojo {
                 .addRequestInterceptorFirst(new PreemptiveBasicAuthInterceptor(basicAuth, target, getLog()))
                 .build();
     }
+
 
     private static final class PreemptiveBasicAuthInterceptor implements HttpRequestInterceptor {
 

@@ -28,6 +28,8 @@ import org.apache.hc.client5.http.classic.methods.HttpUriRequestBase;
  */
 final class WebDavMkCol extends HttpUriRequestBase {
 
+    private static final long serialVersionUID = -8206740913450995038L;
+
     /**
      * Constructor specifying a URI.
      *

@@ -37,7 +37,7 @@ import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Parameter;
 
-abstract class AbstractBundleDeployMojo extends AbstractBundlePostMojo {
+abstract class AbstractBundleDeployMojo extends AbstractBundleRequestMojo {
 
     /**
      * The URL to the OSGi Bundle repository to which the bundle is posted, e.g.

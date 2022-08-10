@@ -39,7 +39,7 @@ import org.apache.maven.project.MavenProject;
 /**
  * Manages OSGi configurations for File System Resource provider.
  */
-abstract class AbstractFsMountMojo extends AbstractBundlePostMojo {
+abstract class AbstractFsMountMojo extends AbstractBundleRequestMojo {
 
     /**
      * The name of the generated JAR file.
