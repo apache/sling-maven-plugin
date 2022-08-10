@@ -55,7 +55,8 @@ public class FelixPostDeployMethod implements DeployMethod {
         }
         builder.addBinaryBody(file.getName(), file);
         filePost.setEntity(builder.build());
-        context.getHttpClient().execute(filePost, new BasicHttpClientResponseHandler());
+        String response = context.getHttpClient().execute(filePost, new BasicHttpClientResponseHandler());
+        context.getLog().debug("Received response: " + response);
     }
 
     @Override
@@ -65,7 +66,8 @@ public class FelixPostDeployMethod implements DeployMethod {
         params.add(new BasicNameValuePair("action", "uninstall"));
         post.setEntity(new UrlEncodedFormEntity(params));
 
-        context.getHttpClient().execute(post, new BasicHttpClientResponseHandler());
+        String response = context.getHttpClient().execute(post, new BasicHttpClientResponseHandler());
+        context.getLog().debug("Received response: " + response);
     }
 
 }
