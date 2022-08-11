@@ -22,11 +22,10 @@ under the License.
 <project xmlns="http://maven.apache.org/DECORATION/1.8.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://maven.apache.org/DECORATION/1.8.0 http://maven.apache.org/xsd/decoration-1.8.0.xsd">
   <body>
-    <menu name="Overview">
-      <item name="Introduction" href="index.html"/>
-      <item name="Bundle Installation" href="bundle-installation.html"/>
-      <item name="Goals" href="plugin-info.html"/>
-    </menu>
-    <menu ref="reports"/>
+    <!-- repeat the items from parent due to https://issues.apache.org/jira/browse/MSITE-910 -->
+   <breadcrumbs>
+        <item name="Apache Sling" href="https://sling.apache.org/"/>
+        <item name="Maven Plugins" href="https://sling.apache.org/components/"/>
+    </breadcrumbs>
   </body>
 </project>

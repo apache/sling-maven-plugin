@@ -20,35 +20,46 @@ package org.apache.sling.maven.bundlesupport;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 
-import org.apache.commons.httpclient.Credentials;
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.UsernamePasswordCredentials;
-import org.apache.commons.httpclient.auth.AuthScope;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.hc.client5.http.auth.UsernamePasswordCredentials;
+import org.apache.hc.client5.http.config.RequestConfig;
+import org.apache.hc.client5.http.impl.auth.BasicScheme;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.HttpClients;
+import org.apache.hc.client5.http.protocol.HttpClientContext;
+import org.apache.hc.core5.http.EntityDetails;
+import org.apache.hc.core5.http.HttpException;
+import org.apache.hc.core5.http.HttpHost;
+import org.apache.hc.core5.http.HttpRequest;
+import org.apache.hc.core5.http.HttpRequestInterceptor;
+import org.apache.hc.core5.http.protocol.HttpContext;
+import org.apache.hc.core5.util.Timeout;
 import org.apache.maven.plugin.AbstractMojo;
+import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugins.annotations.Parameter;
 
-abstract class AbstractBundlePostMojo extends AbstractMojo {
+abstract class AbstractBundleRequestMojo extends AbstractMojo {
 
     /**
      * The URL of the running Sling instance.
      *
      * <p>The default is only useful for <strong>WebConsole</strong> deployment.</p>
      *
-     * <p>For <strong>WebDAV</strong> deployment it is recommended to include the Sling Simple WebDAV servlet root, for instance <a href="http://localhost:8080/dav/default/libs/sling/install">http://localhost:8080/dav/default/libs/sling/install</a>. Omitting the {@code dav/default} segment can lead to conflicts with other servlets.</p>
+     * <p>For <strong>WebDAV</strong> deployment it is recommended to include the <a href="https://sling.apache.org/documentation/development/repository-based-development.html#separate-uri-space-webdav">Sling Simple WebDAV servlet root</a>, for instance <a href="http://localhost:8080/dav/default/libs/sling/install">http://localhost:8080/dav/default/libs/sling/install</a>. Omitting the {@code dav/default} segment can lead to conflicts with other servlets.</p>
      */
     @Parameter(property="sling.url", defaultValue="http://localhost:8080/system/console", required = true)
-    protected String slingUrl;
+    protected URI slingUrl;
 
     /**
      * The WebConsole URL of the running Sling instance. This is required for file system provider operations.
      * If not configured the value of slingUrl is used.
      */
     @Parameter(property="sling.console.url")
-    protected String slingConsoleUrl;
+    protected URI slingConsoleUrl;
         
     /**
      * An optional url suffix which will be appended to the <code>sling.url</code>
@@ -144,42 +155,85 @@ abstract class AbstractBundlePostMojo extends AbstractMojo {
     }
 
     /**
-     * @return Returns the combination of <code>sling.url</code> and <code>sling.urlSuffix</code>.
+     * @return Returns the combination of <code>sling.url</code> and <code>sling.urlSuffix</code>. Always ends with "/".
      */
-    protected String getTargetURL() {
-        String targetURL = slingUrl;
+    protected URI getTargetURL() {
+        final URI targetURL;
         if (slingUrlSuffix != null) {
-            targetURL += slingUrlSuffix;
+            targetURL = slingUrl.resolve(slingUrlSuffix);
+        } else {
+            targetURL = slingUrl;
         }
-        return targetURL;
+        return addTrailingSlash(targetURL);
     }
 
     /**
-     * @return Returns the combination of <code>sling.console.url</code> and <code>sling.urlSuffix</code>.
+     * @return Returns the combination of <code>sling.console.url</code> and <code>sling.urlSuffix</code>. Always ends with "/".
      */
-    protected String getConsoleTargetURL() {
-        String targetURL = StringUtils.defaultString(slingConsoleUrl, slingUrl);
+    protected URI getConsoleTargetURL() {
+        URI targetURL = slingConsoleUrl != null ? slingConsoleUrl : slingUrl;
         if (slingUrlSuffix != null) {
-            targetURL += slingUrlSuffix;
+            targetURL = targetURL.resolve(slingUrlSuffix);
         }
-        return targetURL;
+        return addTrailingSlash(targetURL);
+    }
+
+    public static URI addTrailingSlash(URI targetURL) {
+        if (!targetURL.getPath().endsWith("/")) {
+            String path = targetURL.getPath()+"/";
+            try {
+                return new URI(targetURL.getScheme(), targetURL.getUserInfo(), targetURL.getHost(), targetURL.getPort(), path, targetURL.getQuery(), targetURL.getFragment());
+            } catch (URISyntaxException e) {
+                throw new IllegalStateException("Could not create new URI from existing one", e); // should never happen
+            }
+        } else {
+            return targetURL;
+        }
     }
 
     /**
      * @return Get the http client
      */
-    protected HttpClient getHttpClient() {
-        final HttpClient client = new HttpClient();
-        client.getHttpConnectionManager().getParams().setConnectionTimeout(
-            5000);
+    protected CloseableHttpClient getHttpClient() {
+        // Generate Basic scheme object
+        final BasicScheme basicAuth = new BasicScheme();
+        basicAuth.initPreemptive(new UsernamePasswordCredentials(user, password.toCharArray()));
 
-        // authentication stuff
-        client.getParams().setAuthenticationPreemptive(true);
-        Credentials defaultcreds = new UsernamePasswordCredentials(user,
-            password);
-        client.getState().setCredentials(AuthScope.ANY, defaultcreds);
+        // restrict to the Sling URL only
+        final HttpHost target = new HttpHost(getTargetURL().getScheme(), getTargetURL().getHost(), getTargetURL().getPort());
 
-        return client;
+        RequestConfig requestConfig = RequestConfig.custom().setConnectTimeout(Timeout.ofSeconds(5)).build();
+        
+        return HttpClients.custom()
+                .setDefaultRequestConfig(requestConfig)
+                .addRequestInterceptorFirst(new PreemptiveBasicAuthInterceptor(basicAuth, target, getLog()))
+                .build();
     }
 
+
+    private static final class PreemptiveBasicAuthInterceptor implements HttpRequestInterceptor {
+
+        private final BasicScheme basicAuth;
+        private final HttpHost targetHost;
+        private final Log log;
+
+        public PreemptiveBasicAuthInterceptor(BasicScheme basicAuth, HttpHost targetHost, Log log) {
+            super();
+            this.basicAuth = basicAuth;
+            this.targetHost = targetHost;
+            this.log = log;
+        }
+
+        @Override
+        public void process(HttpRequest request, EntityDetails entity, HttpContext context) throws HttpException, IOException {
+            if (!(context instanceof HttpClientContext)) {
+                throw new IllegalStateException("This interceptor only supports HttpClientContext but context is of type " + context.getClass());
+            }
+            HttpClientContext httpClientContext = (HttpClientContext)context;
+
+            log.debug("Adding preemptive authentication to request for target host " + targetHost);
+            // as the AuthExchange object is already retrieved by the client when the interceptor kicks in, it needs to modify the existing object
+            httpClientContext.getAuthExchange(targetHost).select(basicAuth);
+        }
+    }
 }

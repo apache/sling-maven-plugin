@@ -19,7 +19,10 @@
 package org.apache.sling.maven.bundlesupport;
 
 import java.io.File;
+import java.io.IOException;
+import java.net.URI;
 
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
@@ -27,7 +30,7 @@ import org.apache.sling.maven.bundlesupport.deploy.BundleDeploymentMethod;
 import org.apache.sling.maven.bundlesupport.deploy.DeployContext;
 import org.apache.sling.maven.bundlesupport.fsresource.SlingInitialContentMounter;
 
-abstract class AbstractBundleInstallMojo extends AbstractBundlePostMojo {
+abstract class AbstractBundleInstallMojo extends AbstractBundleRequestMojo {
 
     /**
      * If a PUT via WebDAV should be used instead of the standard POST to the
@@ -54,6 +57,7 @@ abstract class AbstractBundleInstallMojo extends AbstractBundlePostMojo {
      * </ol>
      * 
      * This has precedence over the deprecated parameter {@link #usePut}.
+     * If nothing is set the default is either {@code WebConsole} or {@code WebDAV} (when {@link #usePut} is {@code true}).
      */
     @Parameter(property="sling.deploy.method", required = false)
     protected BundleDeploymentMethod deploymentMethod;
@@ -103,19 +107,17 @@ abstract class AbstractBundleInstallMojo extends AbstractBundlePostMojo {
         super();
     }
 
-    protected abstract String getBundleFileName() throws MojoExecutionException;
+    protected abstract File getBundleFileName() throws MojoExecutionException;
 
     @Override
     public void execute() throws MojoExecutionException {
 
         // get the file to upload
-        String bundleFileName = getBundleFileName();
+        File bundleFile = getBundleFileName();
 
         // only upload if packaging as an osgi-bundle
-        File bundleFile = new File(bundleFileName);
-
-        if(!bundleFile.exists()) {
-            getLog().info(bundleFile + " does not exist, no uploading");
+        if (!bundleFile.exists()) {
+            getLog().info(bundleFile + " does not exist, not uploading");
             return;
         }
 
@@ -125,29 +127,39 @@ abstract class AbstractBundleInstallMojo extends AbstractBundlePostMojo {
             return;
         }
 
-        String targetURL = getTargetURL();
+        URI targetURL = getTargetURL();
 
         BundleDeploymentMethod deploymentMethod = getDeploymentMethod();
         getLog().info(
             "Installing Bundle " + bundleName + "(" + bundleFile + ") to "
-                + targetURL + " via " + deploymentMethod);
+                + targetURL + " via " + deploymentMethod + "...");
 
-        deploymentMethod.execute().deploy(targetURL, bundleFile, bundleName, new DeployContext()
+        try (CloseableHttpClient httpClient = getHttpClient()){
+            deploymentMethod.execute().deploy(targetURL, bundleFile, bundleName, new DeployContext()
                 .log(getLog())
-                .httpClient(getHttpClient())
+                .httpClient(httpClient)
                 .failOnError(failOnError)
                 .bundleStartLevel(bundleStartLevel)
                 .bundleStart(bundleStart)
                 .mimeType(mimeType)
                 .refreshPackages(refreshPackages));
-
-        if ( mountByFS ) {
-            configure(getConsoleTargetURL(), bundleFile);
+            getLog().info("Bundle installed successfully");
+            if ( mountByFS ) {
+                configure(httpClient, getConsoleTargetURL(), bundleFile);
+            }
+        } catch (IOException e) {
+            String msg = "Installation failed, cause: "
+                + e.getMessage();
+            if (failOnError) {
+                throw new MojoExecutionException(msg, e);
+            } else {
+                getLog().error(msg, e);
+            }
         }
     }
     
-    protected void configure(final String targetURL, final File file) throws MojoExecutionException {
-        new SlingInitialContentMounter(getLog(), getHttpClient(), project).mount(targetURL, file);
+    protected void configure(CloseableHttpClient httpClient, final URI targetURL, final File file) throws MojoExecutionException {
+        new SlingInitialContentMounter(getLog(), httpClient, project).mount(targetURL, file);
     }
 
     /**

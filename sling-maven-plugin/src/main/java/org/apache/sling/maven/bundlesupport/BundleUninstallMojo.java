@@ -19,7 +19,10 @@
 package org.apache.sling.maven.bundlesupport;
 
 import java.io.File;
+import java.io.IOException;
+import java.net.URI;
 
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
@@ -43,10 +46,10 @@ public class BundleUninstallMojo extends AbstractBundleInstallMojo {
      * The name of the generated JAR file.
      */
     @Parameter(property = "sling.file", defaultValue = "${project.build.directory}/${project.build.finalName}.jar")
-    private String bundleFileName;
+    private File bundleFileName;
 
     @Override
-    protected String getBundleFileName() {
+    protected File getBundleFileName() {
         return bundleFileName;
     }
 
@@ -55,33 +58,44 @@ public class BundleUninstallMojo extends AbstractBundleInstallMojo {
      */
     @Override
     public void execute() throws MojoExecutionException {
-        // only upload if packaging as an osgi-bundle
-        final File bundleFile = new File(bundleFileName);
+        // only uninstall if packaging as an osgi-bundle
+        final File bundleFile = getBundleFileName();
         final String bundleName = getBundleSymbolicName(bundleFile);
         if (bundleName == null) {
             getLog().info(bundleFile + " is not an OSGi Bundle, not uploading");
             return;
         }
 
-        String targetURL = getTargetURL();
+        URI targetURL = getTargetURL();
 
         BundleDeploymentMethod deployMethod = getDeploymentMethod();
-        getLog().info(
-            "Unistalling Bundle " + bundleName + " from "
-                + targetURL + " via " + deployMethod);
 
-        configure(targetURL, bundleFile);
 
-        deployMethod.execute().undeploy(targetURL, bundleFile, bundleName, new DeployContext()
-                .log(getLog())
-                .httpClient(getHttpClient())
-                .failOnError(failOnError)
-                .mimeType(mimeType));
+        try (CloseableHttpClient httpClient = getHttpClient()){
+            configure(httpClient, targetURL, bundleFile);
+            getLog().info(
+                    "Uninstalling Bundle " + bundleName + " from "
+                            + targetURL + " via " + deployMethod + "...");
+            deployMethod.execute().undeploy(targetURL, bundleFile, bundleName, new DeployContext()
+                    .log(getLog())
+                    .httpClient(httpClient)
+                    .failOnError(failOnError)
+                    .mimeType(mimeType));
+            getLog().info("Bundle uninstalled successfully!");
+        } catch (IOException e) {
+            String msg = "Uninstall from " + targetURL
+                    + " failed, cause: " + e.getMessage();
+            if (failOnError) {
+                throw new MojoExecutionException(msg, e);
+            } else {
+                getLog().error(msg, e);
+            }
+        }
     }
 
     @Override
-    protected void configure(final String targetURL, final File file) throws MojoExecutionException {
-        new SlingInitialContentMounter(getLog(), getHttpClient(), project).unmount(targetURL, file);
+    protected void configure(CloseableHttpClient httpClient, final URI targetURL, final File file) throws MojoExecutionException {
+        new SlingInitialContentMounter(getLog(), httpClient, project).unmount(targetURL, file);
     }
     
 }

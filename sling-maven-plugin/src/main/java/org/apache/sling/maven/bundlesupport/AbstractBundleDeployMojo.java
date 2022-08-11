@@ -29,19 +29,15 @@ import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
 import java.util.zip.Deflater;
 
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpStatus;
-import org.apache.commons.httpclient.methods.PostMethod;
-import org.apache.commons.httpclient.methods.multipart.FilePart;
-import org.apache.commons.httpclient.methods.multipart.FilePartSource;
-import org.apache.commons.httpclient.methods.multipart.MultipartRequestEntity;
-import org.apache.commons.httpclient.methods.multipart.Part;
-import org.apache.commons.httpclient.methods.multipart.StringPart;
 import org.apache.commons.io.IOUtils;
+import org.apache.hc.client5.http.classic.methods.HttpPost;
+import org.apache.hc.client5.http.entity.mime.MultipartEntityBuilder;
+import org.apache.hc.client5.http.impl.classic.BasicHttpClientResponseHandler;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Parameter;
 
-abstract class AbstractBundleDeployMojo extends AbstractBundlePostMojo {
+abstract class AbstractBundleDeployMojo extends AbstractBundleRequestMojo {
 
     /**
      * The URL to the OSGi Bundle repository to which the bundle is posted, e.g.
@@ -93,40 +89,25 @@ abstract class AbstractBundleDeployMojo extends AbstractBundlePostMojo {
 
         getLog().info(
             "Deploying Bundle " + bundleName + "(" + jarFile + ") to " + obr);
-        this.post(this.obr, jarFile);
+        try (CloseableHttpClient httpClient = getHttpClient()) {
+            this.post(httpClient, this.obr, jarFile);
+            getLog().info("Bundle deployed");
+        }
+        catch (IOException ex) {
+            throw new MojoExecutionException("Deployment on " + this.obr
+                + " failed, cause: " + ex.getMessage(), ex);
+        }
     }
 
-    private void post(String targetURL, File file)
-            throws MojoExecutionException {
-        
-        PostMethod filePost = new PostMethod(targetURL);
-        try {
-            Part[] parts = {
-                new FilePart(file.getName(), new FilePartSource(file.getName(),
-                    file)), new StringPart("_noredir_", "_noredir_") };
-            filePost.setRequestEntity(new MultipartRequestEntity(parts,
-                filePost.getParams()));
-            HttpClient client = new HttpClient();
-            client.getHttpConnectionManager().getParams().setConnectionTimeout(
-                5000);
-            int status = client.executeMethod(filePost);
-            if (status == HttpStatus.SC_OK) {
-                getLog().info("Bundle deployed");
-            } else {
-                String msg = "Deployment failed, cause: "
-                    + HttpStatus.getStatusText(status);
-                if (failOnError) {
-                    throw new MojoExecutionException(msg);
-                } else {
-                    getLog().error(msg);
-                }
-            }
-        } catch (Exception ex) {
-            throw new MojoExecutionException("Deployment on " + targetURL
-                + " failed, cause: " + ex.getMessage(), ex);
-        } finally {
-            filePost.releaseConnection();
-        }
+    private void post(CloseableHttpClient httpClient, String targetURL, File file)
+            throws IOException {
+        HttpPost filePost = new HttpPost(targetURL);
+        MultipartEntityBuilder builder = MultipartEntityBuilder.create();
+        builder.addTextBody("_noredir_", "_noredir_");
+        builder.addBinaryBody(file.getName(), file);
+        filePost.setEntity(builder.build());
+        String response = httpClient.execute(filePost, new BasicHttpClientResponseHandler());
+        getLog().debug("Received response: " + response);
     }
 
     /**

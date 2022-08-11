@@ -19,24 +19,29 @@
 package org.apache.sling.maven.bundlesupport.fsresource;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
+import java.net.URI;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 import javax.json.JsonArray;
 import javax.json.JsonException;
 import javax.json.JsonObject;
 
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpException;
-import org.apache.commons.httpclient.HttpStatus;
-import org.apache.commons.httpclient.methods.GetMethod;
-import org.apache.commons.httpclient.methods.PostMethod;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.hc.client5.http.classic.methods.HttpGet;
+import org.apache.hc.client5.http.classic.methods.HttpPost;
+import org.apache.hc.client5.http.entity.UrlEncodedFormEntity;
+import org.apache.hc.client5.http.impl.classic.BasicHttpClientResponseHandler;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
+import org.apache.hc.core5.http.NameValuePair;
+import org.apache.hc.core5.http.ProtocolException;
+import org.apache.hc.core5.http.io.entity.EntityUtils;
+import org.apache.hc.core5.http.message.BasicNameValuePair;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
@@ -60,10 +65,10 @@ final class FsMountHelper {
     private static final String PROPERTY_FILEVAULT_FILTER_XML = "provider.filevault.filterxml.path";
         
     private final Log log;
-    private final HttpClient httpClient;
+    private final CloseableHttpClient httpClient;
     private final MavenProject project;
 
-    public FsMountHelper(Log log, HttpClient httpClient, MavenProject project) {
+    public FsMountHelper(Log log, CloseableHttpClient httpClient, MavenProject project) {
         this.log = log;
         this.httpClient = httpClient;
         this.project = project;
@@ -72,7 +77,7 @@ final class FsMountHelper {
     /**
      * Adds as set of new configurations and removes old ones.
      */
-    public void addConfigurations(final String targetUrl, Collection<FsResourceConfiguration> cfgs) throws MojoExecutionException {
+    public void addConfigurations(final URI targetUrl, Collection<FsResourceConfiguration> cfgs) throws MojoExecutionException {
         final Map<String,FsResourceConfiguration> oldConfigs = getCurrentConfigurations(targetUrl);
 
         for (FsResourceConfiguration cfg : cfgs) {
@@ -111,35 +116,26 @@ final class FsMountHelper {
     /**
      * Add a new configuration for the file system provider
      */
-    private void addConfiguration(final String targetUrl, FsResourceConfiguration cfg) throws MojoExecutionException {
-        final String postUrl = targetUrl  + "/configMgr/" + FS_FACTORY;
-        final PostMethod post = new PostMethod(postUrl);
-        post.addParameter("apply", "true");
-        post.addParameter("factoryPid", FS_FACTORY);
-        post.addParameter("pid", "[Temporary PID replaced by real PID upon save]");
+    private void addConfiguration(final URI targetUrl, FsResourceConfiguration cfg) throws MojoExecutionException {
+        final URI postUrl = targetUrl.resolve("/configMgr/" + FS_FACTORY);
+        final HttpPost post = new HttpPost(postUrl);
+        List<NameValuePair> params = new ArrayList<>();
+        params.add(new BasicNameValuePair("apply", "true"));
+        params.add(new BasicNameValuePair("factoryPid", FS_FACTORY));
+        params.add(new BasicNameValuePair("pid", "[Temporary PID replaced by real PID upon save]"));
         Map<String,String> props = toMap(cfg);
         for (Map.Entry<String,String> entry : props.entrySet()) {
-            post.addParameter(entry.getKey(), entry.getValue());
+            params.add(new BasicNameValuePair(entry.getKey(), entry.getValue()));
         }
-        post.addParameter("propertylist", StringUtils.join(props.keySet(), ","));
+        params.add(new BasicNameValuePair("propertylist", StringUtils.join(props.keySet(), ",")));
+        post.setEntity(new UrlEncodedFormEntity(params));
+        
         try {
-            final int status = httpClient.executeMethod(post);
-            // we get a moved temporarily back from the configMgr plugin
-            if (status == HttpStatus.SC_MOVED_TEMPORARILY || status == HttpStatus.SC_OK) {
-                log.info("Configuration created.");
-            }
-            else {
-                log.error("Configuration on " + postUrl + " failed, cause: " + HttpStatus.getStatusText(status));
-            }
-        }
-        catch (HttpException ex) {
-            throw new MojoExecutionException("Configuration on " + postUrl + " failed, cause: " + ex.getMessage(), ex);
+            String response = httpClient.execute(post, new BasicHttpClientResponseHandler());
+            log.debug("Configuration created: " + response);
         }
         catch (IOException ex) {
             throw new MojoExecutionException("Configuration on " + postUrl + " failed, cause: " + ex.getMessage(), ex);
-        }
-        finally {
-            post.releaseConnection();
         }
     }
     
@@ -168,7 +164,7 @@ final class FsMountHelper {
     /**
      * Remove all configurations contained in the given config map.
      */
-    public void removeConfigurations(final String targetUrl, Map<String,FsResourceConfiguration> configs) throws MojoExecutionException {
+    public void removeConfigurations(final URI targetUrl, Map<String,FsResourceConfiguration> configs) throws MojoExecutionException {
         for (Map.Entry<String,FsResourceConfiguration>  current : configs.entrySet()) {
             log.debug("Removing configuration for " + current.getValue());
             // remove old config
@@ -179,31 +175,22 @@ final class FsMountHelper {
     /**
      * Remove configuration.
      */
-    private void removeConfiguration(final String targetUrl, final String pid) throws MojoExecutionException {
-        final String postUrl = targetUrl  + "/configMgr/" + pid;
-        final PostMethod post = new PostMethod(postUrl);
-        post.addParameter("apply", "true");
-        post.addParameter("delete", "true");
+    private void removeConfiguration(final URI targetUrl, final String pid) throws MojoExecutionException {
+        final URI postUrl = targetUrl.resolve("/configMgr/" + pid);
+        final HttpPost post = new HttpPost(postUrl);
+        List<NameValuePair> params = new ArrayList<>();
+        params.add(new BasicNameValuePair("apply", "true"));
+        params.add(new BasicNameValuePair("delete", "true"));
+        post.setEntity(new UrlEncodedFormEntity(params));
+       
         try {
-            final int status = httpClient.executeMethod(post);
+            String response = httpClient.execute(post, new BasicHttpClientResponseHandler());
             // we get a moved temporarily back from the configMgr plugin
-            if (status == HttpStatus.SC_MOVED_TEMPORARILY || status == HttpStatus.SC_OK) {
-                log.debug("Configuration removed.");
-            }
-            else {
-                log.error("Removing configuration failed, cause: "+ HttpStatus.getStatusText(status));
-            }
-        }
-        catch (HttpException ex) {
-            throw new MojoExecutionException("Removing configuration at " + postUrl
-                    + " failed, cause: " + ex.getMessage(), ex);
+            log.debug("Configuration removed: " + response);
         }
         catch (IOException ex) {
             throw new MojoExecutionException("Removing configuration at " + postUrl
                     + " failed, cause: " + ex.getMessage(), ex);
-        }
-        finally {
-            post.releaseConnection();
         }
     }
 
@@ -213,16 +200,16 @@ final class FsMountHelper {
      * @return A map (may be empty) with the pids as keys and the configurations as values
      * @throws MojoExecutionException
      */
-    public Map<String,FsResourceConfiguration> getCurrentConfigurations(final String targetUrl) throws MojoExecutionException {
+    public Map<String,FsResourceConfiguration> getCurrentConfigurations(final URI targetUrl) throws MojoExecutionException {
         log.debug("Getting current file provider configurations.");
         final Map<String,FsResourceConfiguration> result = new HashMap<>();
-        final String getUrl = targetUrl  + "/configMgr/(service.factoryPid=" + FS_FACTORY + ").json";
-        final GetMethod get = new GetMethod(getUrl);
+        final URI getUrl = targetUrl.resolve("/configMgr/(service.factoryPid=" + FS_FACTORY + ").json");
+        final HttpGet get = new HttpGet(getUrl);
 
-        try {
-            final int status = httpClient.executeMethod(get);
+        try (CloseableHttpResponse response = httpClient.execute(get)) {
+            final int status = response.getCode();
             if ( status == 200 ) {
-                String contentType = get.getResponseHeader(HEADER_CONTENT_TYPE).getValue();
+                String contentType = response.getHeader(HEADER_CONTENT_TYPE).getValue();
                 int pos = contentType.indexOf(';');
                 if ( pos != -1 ) {
                     contentType = contentType.substring(0, pos);
@@ -233,10 +220,7 @@ final class FsMountHelper {
                             "the initial content through file system provider configs. " +
                             "Either upgrade the web console or disable this feature.");
                 }
-                final String jsonText;
-                try (InputStream jsonResponse = get.getResponseBodyAsStream()) {
-                    jsonText = IOUtils.toString(jsonResponse, StandardCharsets.UTF_8);
-                }
+                final String jsonText = EntityUtils.toString(response.getEntity());
                 try {
                     JsonArray array = JsonSupport.parseArray(jsonText);
                     for(int i=0; i<array.size(); i++) {
@@ -268,16 +252,9 @@ final class FsMountHelper {
                 }
             }
         }
-        catch (HttpException ex) {
+        catch (IOException | ProtocolException ex) {
             throw new MojoExecutionException("Reading configuration from " + getUrl
                     + " failed, cause: " + ex.getMessage(), ex);
-        }
-        catch (IOException ex) {
-            throw new MojoExecutionException("Reading configuration from " + getUrl
-                    + " failed, cause: " + ex.getMessage(), ex);
-        }
-        finally {
-            get.releaseConnection();
         }
         return result;
     }

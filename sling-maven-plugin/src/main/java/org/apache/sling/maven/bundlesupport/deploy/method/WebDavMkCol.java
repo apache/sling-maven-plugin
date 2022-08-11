@@ -16,7 +16,9 @@
  */
 package org.apache.sling.maven.bundlesupport.deploy.method;
 
-import org.apache.commons.httpclient.methods.EntityEnclosingMethod;
+import java.net.URI;
+
+import org.apache.hc.client5.http.classic.methods.HttpUriRequestBase;
 
 /**
  * Implements the WebDAV MKCOL method
@@ -24,20 +26,17 @@ import org.apache.commons.httpclient.methods.EntityEnclosingMethod;
  * @see <a href="http://www.webdav.org/specs/rfc4918.html#METHOD_MKCOL">RFC 4918, $9.3</a>
  *
  */
-final class MkColMethod extends EntityEnclosingMethod {
+final class WebDavMkCol extends HttpUriRequestBase {
+
+    private static final long serialVersionUID = -8206740913450995038L;
 
     /**
      * Constructor specifying a URI.
      *
      * @param uri either an absolute or relative URI
      */
-    public MkColMethod(String uri) {
-        super(uri);
-    }
-    
-    @Override
-    public String getName() {
-        return "MKCOL";
+    public WebDavMkCol(URI uri) {
+        super("MKCOL", uri);
     }
 
 }

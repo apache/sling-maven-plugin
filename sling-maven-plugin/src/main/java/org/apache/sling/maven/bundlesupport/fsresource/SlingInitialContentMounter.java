@@ -20,6 +20,7 @@ package org.apache.sling.maven.bundlesupport.fsresource;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -27,8 +28,8 @@ import java.util.Map;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 
-import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.maven.model.Resource;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
@@ -48,7 +49,7 @@ public final class SlingInitialContentMounter {
     private final MavenProject project;
     private final FsMountHelper helper;
 
-    public SlingInitialContentMounter(Log log, HttpClient httpClient, MavenProject project) {
+    public SlingInitialContentMounter(Log log, CloseableHttpClient httpClient, MavenProject project) {
         this.log = log;
         this.project = project;
         this.helper = new FsMountHelper(log, httpClient, project);
@@ -60,7 +61,7 @@ public final class SlingInitialContentMounter {
      * @param bundleFile The artifact (bundle)
      * @throws MojoExecutionException Exception
      */
-    public void mount(final String targetUrl, final File bundleFile) throws MojoExecutionException {
+    public void mount(final URI targetUrl, final File bundleFile) throws MojoExecutionException {
         // first, let's get the manifest and see if initial content is configured
         ManifestHeader header = null;
         try {
@@ -163,7 +164,7 @@ public final class SlingInitialContentMounter {
      * @param bundleFile The artifact (bundle)
      * @throws MojoExecutionException Exception
      */
-    public void unmount(final String targetUrl, final File bundleFile) throws MojoExecutionException {
+    public void unmount(final URI targetUrl, final File bundleFile) throws MojoExecutionException {
         log.info("Removing file system provider configurations...");
 
         // remove all current configs for this project

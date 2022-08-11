@@ -18,7 +18,9 @@
 package org.apache.sling.maven.bundlesupport;
 
 import java.io.File;
+import java.net.URI;
 
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.sling.maven.bundlesupport.fsresource.FileVaultXmlMounter;
@@ -33,17 +35,17 @@ import org.apache.sling.maven.bundlesupport.fsresource.SlingInitialContentMounte
 public class FsUnMountMojo extends AbstractFsMountMojo {
 
     @Override
-    protected void configureSlingInitialContent(final String targetUrl, final File bundleFile) throws MojoExecutionException {
-        new SlingInitialContentMounter(getLog(), getHttpClient(), project).unmount(targetUrl, bundleFile);
+    protected void configureSlingInitialContent(CloseableHttpClient httpClient, final URI targetUrl, final File bundleFile) throws MojoExecutionException {
+        new SlingInitialContentMounter(getLog(), httpClient, project).unmount(targetUrl, bundleFile);
     }
 
     @Override
-    protected void configureFileVaultXml(String targetUrl, File jcrRootFile, File filterXmlFile) throws MojoExecutionException {
-        new FileVaultXmlMounter(getLog(), getHttpClient(), project).unmount(targetUrl, jcrRootFile, filterXmlFile);
+    protected void configureFileVaultXml(CloseableHttpClient httpClient, URI targetUrl, File jcrRootFile, File filterXmlFile) throws MojoExecutionException {
+        new FileVaultXmlMounter(getLog(), httpClient, project).unmount(targetUrl, jcrRootFile, filterXmlFile);
     }
 
     @Override
-    protected void ensureBundlesInstalled(String targetUrl) throws MojoExecutionException {
+    protected void ensureBundlesInstalled(CloseableHttpClient httpClient, URI targetUrl) throws MojoExecutionException {
         // nothing to do on uninstall
     }
 

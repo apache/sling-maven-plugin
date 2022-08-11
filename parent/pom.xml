@@ -17,13 +17,13 @@
   specific language governing permissions and limitations
   under the License.
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" child.project.url.inherit.append.path="false">
 
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>org.apache.sling</groupId>
         <artifactId>sling</artifactId>
-        <version>41</version>
+        <version>49</version>
         <relativePath />
     </parent>
 
@@ -33,10 +33,17 @@
 
     <name>Apache Sling Maven Plugin Parent</name>
     
+    <!-- using adjusted inheritance rules: https://issues.apache.org/jira/browse/MNG-6059 -->
+    <scm child.scm.connection.inherit.append.path="false" child.scm.developerConnection.inherit.append.path="false" child.scm.url.inherit.append.path="false">
+        <connection>scm:git:https://gitbox.apache.org/repos/asf/sling-maven-plugin.git</connection>
+        <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/sling-maven-plugin.git</developerConnection>
+        <url>https://github.com/apache/sling-maven-plugin</url>
+        <tag>HEAD</tag>
+    </scm>
+
     <build>
         <pluginManagement>
             <plugins>
-
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-release-plugin</artifactId>
