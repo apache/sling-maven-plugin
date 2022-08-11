@@ -19,13 +19,15 @@ package org.apache.sling.maven.bundlesupport;
 
 import java.io.File;
 
+import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 
 /**
- * Install a local OSGi bundle file to a running Sling instance.
+ * Install the project's artifact to a running Sling instance (in case it is an OSGi bundle).
+ * It uses the first valid OSGi bundle file for deployment from the primary artifact and all secondary ones.
  * For details refer to <a href="bundle-installation.html">Bundle Installation</a>.
  */
 @Mojo(name = "install", defaultPhase = LifecyclePhase.INSTALL)
@@ -37,12 +39,6 @@ public class BundleInstallMojo extends AbstractBundleInstallMojo {
      */
     @Parameter(property = "sling.install.skip", defaultValue = "false", required = true)
     private boolean skip;
-    
-    /**
-     * The path of the bundle file to install.
-     */
-    @Parameter(property = "sling.file", defaultValue = "${project.build.directory}/${project.build.finalName}.jar", required = true)
-    private File bundleFileName;
 
     @Override
     public void execute() throws MojoExecutionException {
@@ -51,12 +47,30 @@ public class BundleInstallMojo extends AbstractBundleInstallMojo {
             getLog().debug("Skipping bundle installation as instructed");
             return;
         }
-
         super.execute();
     }
-    
+
     @Override
     protected File getBundleFileName() {
-        return bundleFileName;
+        File file = project.getArtifact().getFile();
+        if (isBundleFile(file)) {
+            return file;
+        } else {
+            getLog().debug("No bundle found in primary artifact " + file + ", checking secondary ones...");
+            for (Artifact artifact : project.getAttachedArtifacts()) {
+                if (isBundleFile(artifact.getFile())) {
+                    return file;
+                }
+                getLog().debug("No bundle found in secondary artifact " + file);
+            }
+        }
+        return null;
+    }
+
+    private boolean isBundleFile(File file) {
+        if (file == null) {
+            return false;
+        }
+        return getBundleSymbolicName(file) != null;
     }
 }

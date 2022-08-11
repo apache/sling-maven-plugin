@@ -41,6 +41,7 @@ import org.apache.hc.core5.util.Timeout;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugins.annotations.Parameter;
+import org.osgi.framework.Constants;
 
 abstract class AbstractBundleRequestMojo extends AbstractMojo {
 
@@ -117,9 +118,7 @@ abstract class AbstractBundleRequestMojo extends AbstractMojo {
             return null;
         }
 
-        JarFile jaf = null;
-        try {
-            jaf = new JarFile(jarFile);
+        try (JarFile jaf = new JarFile(jarFile)) {
             Manifest manif = jaf.getManifest();
             if (manif == null) {
                 getLog().debug(
@@ -127,8 +126,7 @@ abstract class AbstractBundleRequestMojo extends AbstractMojo {
                 return null;
             }
 
-            String symbName = manif.getMainAttributes().getValue(
-                "Bundle-SymbolicName");
+            String symbName = manif.getMainAttributes().getValue(Constants.BUNDLE_SYMBOLICNAME);
             if (symbName == null) {
                 getLog().debug(
                     "getBundleSymbolicName: No Bundle-SymbolicName in "
@@ -140,16 +138,7 @@ abstract class AbstractBundleRequestMojo extends AbstractMojo {
         } catch (IOException ioe) {
             getLog().warn("getBundleSymbolicName: Problem checking " + jarFile,
                 ioe);
-        } finally {
-            if (jaf != null) {
-                try {
-                    jaf.close();
-                } catch (IOException ignore) {
-                    // don't care
-                }
-            }
-        }
-
+        } 
         // fall back to not being a bundle
         return null;
     }
