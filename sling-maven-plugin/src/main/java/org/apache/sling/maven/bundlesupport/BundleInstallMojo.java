@@ -29,6 +29,7 @@ import org.apache.maven.plugins.annotations.Parameter;
  * Install the project's artifact to a running Sling instance (in case it is an OSGi bundle).
  * It uses the first valid OSGi bundle file for deployment from the primary artifact and all secondary ones.
  * For details refer to <a href="bundle-installation.html">Bundle Installation</a>.
+ * To install an arbitrary bundle not attached to the current Maven project use goal <a href="install-file-mojo.html">install-file</a>.
  */
 @Mojo(name = "install", defaultPhase = LifecyclePhase.INSTALL)
 public class BundleInstallMojo extends AbstractBundleInstallMojo {
