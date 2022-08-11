@@ -153,6 +153,7 @@
                     <properties>
                         <sling.url>http://localhost:${starter-its.http.port}</sling.url>
                     </properties>
+                    <streamLogsOnFailures>true</streamLogsOnFailures>
                 </configuration>
                 <executions>
                     <execution>
