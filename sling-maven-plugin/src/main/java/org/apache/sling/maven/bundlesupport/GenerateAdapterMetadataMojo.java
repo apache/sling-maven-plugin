@@ -16,21 +16,15 @@
  */
 package org.apache.sling.maven.bundlesupport;
 
-import static org.objectweb.asm.ClassReader.SKIP_CODE;
-import static org.objectweb.asm.ClassReader.SKIP_DEBUG;
-import static org.objectweb.asm.ClassReader.SKIP_FRAMES;
-
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.lang.annotation.Annotation;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import javax.json.Json;
 import javax.json.JsonException;
@@ -48,11 +42,18 @@ import org.apache.maven.project.MavenProject;
 import org.apache.sling.adapter.annotations.Adaptable;
 import org.apache.sling.adapter.annotations.Adaptables;
 import org.codehaus.plexus.util.StringUtils;
-import org.objectweb.asm.ClassReader;
-import org.objectweb.asm.Type;
-import org.objectweb.asm.tree.AnnotationNode;
-import org.objectweb.asm.tree.ClassNode;
-import org.scannotation.AnnotationDB;
+
+import io.github.classgraph.AnnotationClassRef;
+import io.github.classgraph.AnnotationInfo;
+import io.github.classgraph.AnnotationInfoList.AnnotationInfoFilter;
+import io.github.classgraph.AnnotationParameterValue;
+import io.github.classgraph.AnnotationParameterValueList;
+import io.github.classgraph.ClassGraph;
+import io.github.classgraph.ClassGraph.ClasspathElementFilter;
+import io.github.classgraph.ClassGraph.ClasspathElementURLFilter;
+import io.github.classgraph.ClassInfo;
+import io.github.classgraph.ClassInfoList;
+import io.github.classgraph.ScanResult;
 
 /**
  * Build  <a href="http://sling.apache.org/documentation/the-sling-engine/adapters.html">adapter metadata (JSON)</a> for the Web Console Plugin at {@code /system/console/status-adapters} and
@@ -63,37 +64,24 @@ import org.scannotation.AnnotationDB;
     threadSafe = true, requiresDependencyResolution = ResolutionScope.COMPILE)
 public class GenerateAdapterMetadataMojo extends AbstractMojo {
 
-    private static final String ADAPTABLE_DESC = "L" + Adaptable.class.getName().replace('.', '/') + ";";
-
-    private static final String ADAPTABLES_DESC = "L" + Adaptables.class.getName().replace('.', '/') + ";";
-
     private static final String DEFAULT_CONDITION = "If the adaptable is a %s.";
 
-    private static String getSimpleName(final ClassNode clazz) {
-        final String internalName = clazz.name;
-        final int idx = internalName.lastIndexOf('/');
-        if (idx == -1) {
-            return internalName;
-        } else {
-            return internalName.substring(idx + 1);
-        }
-    }
 
     /** The directory which to check for classes with adapter metadata annotations. */
     @Parameter(defaultValue = "${project.build.outputDirectory}")
-    private File buildOutputDirectory;
+    File buildOutputDirectory;
 
     /**
      * Name of the generated descriptor file.
      */
     @Parameter(property = "adapter.descriptor.name", defaultValue = "SLING-INF/adapters.json")
-    private String fileName;
+    String fileName;
 
     /**
      * The output directory in which to emit the descriptor file with name {@link GenerateAdapterMetadataMojo#fileName}.
      */
     @Parameter(defaultValue = "${project.build.outputDirectory}", required = true)
-    private File outputDirectory;
+    File outputDirectory;
 
     /**
      * The Maven project.
@@ -102,39 +90,30 @@ public class GenerateAdapterMetadataMojo extends AbstractMojo {
     private MavenProject project;
 
     public void execute() throws MojoExecutionException, MojoFailureException {
-        try {
-            final Map<String,Object> descriptor = new HashMap<>();
+        final Map<String,Object> descriptor = new HashMap<>();
+        ClassGraph classGraph = new ClassGraph()
+                                    .enableAnnotationInfo()                  // only consider annotation info
+                                    .overrideClasspath(buildOutputDirectory) // just the classpath of the output directory needed (annotation classes themselves not relevant)
+                                    .enableExternalClasses();
+        if (getLog().isDebugEnabled()) {
+            classGraph.verbose();
+        }
+        try (ScanResult result = classGraph.scan()) {
+            ClassInfoList classInfoList = result.getClassesWithAnnotation(Adaptable.class);
+            classInfoList = classInfoList.union(result.getClassesWithAnnotation(Adaptables.class));
 
-            final AnnotationDB annotationDb = new AnnotationDB();
-            annotationDb.scanArchives(buildOutputDirectory.toURI().toURL());
-
-            final Set<String> annotatedClassNames = new HashSet<>();
-            addAnnotatedClasses(annotationDb, annotatedClassNames, Adaptable.class);
-            addAnnotatedClasses(annotationDb, annotatedClassNames, Adaptables.class);
-
-            for (final String annotatedClassName : annotatedClassNames) {
-                getLog().info(String.format("found adaptable annotation on %s", annotatedClassName));
-                final String pathToClassFile = annotatedClassName.replace('.', '/') + ".class";
-                final File classFile = new File(buildOutputDirectory, pathToClassFile);
-                final FileInputStream input = new FileInputStream(classFile);
-                final ClassReader classReader;
-                try {
-                    classReader = new ClassReader(input);
-                } finally {
-                    input.close();
-                }
-                final ClassNode classNode = new ClassNode();
-                classReader.accept(classNode, SKIP_CODE | SKIP_DEBUG | SKIP_FRAMES);
-
-                final List<AnnotationNode> annotations = classNode.invisibleAnnotations;
-                for (final AnnotationNode annotation : annotations) {
-                    if (ADAPTABLE_DESC.equals(annotation.desc)) {
-                        parseAdaptableAnnotation(annotation, classNode, descriptor);
-                    } else if (ADAPTABLES_DESC.equals(annotation.desc)) {
-                        parseAdaptablesAnnotation(annotation, classNode, descriptor);
+            for (ClassInfo annotationClassInfo : classInfoList) {
+                getLog().info(String.format("found adaptable annotation on %s", annotationClassInfo.getSimpleName()));
+                for (AnnotationInfo annotationInfo : annotationClassInfo.getAnnotationInfo().filter(new AdaptableAnnotationInfoFilter())) {
+                    AnnotationParameterValueList annotationParameterValues = annotationInfo.getParameterValues();
+                    if (annotationInfo.getName().equals(Adaptables.class.getName())) {
+                        parseAdaptablesAnnotation(annotationParameterValues, annotationClassInfo.getSimpleName(), descriptor);
+                    } else if (annotationInfo.getName().equals(Adaptable.class.getName())) {
+                        parseAdaptableAnnotation(annotationParameterValues, annotationClassInfo.getSimpleName(), descriptor);
+                    } else {
+                        throw new IllegalStateException("Unexpected annotation class found: " + annotationInfo);
                     }
                 }
-
             }
 
             final File outputFile = new File(outputDirectory, fileName);
@@ -143,84 +122,34 @@ public class GenerateAdapterMetadataMojo extends AbstractMojo {
                     JsonWriter jsonWriter = Json.createWriter(writer)) {
                 jsonWriter.writeObject(JsonSupport.toJson(descriptor));
             }
-            addResource();
 
-        } catch (IOException e) {
-            throw new MojoExecutionException("Unable to generate metadata", e);
-        } catch (JsonException e) {
+        } catch (IOException|JsonException e) {
             throw new MojoExecutionException("Unable to generate metadata", e);
         }
 
     }
 
-    private void addAnnotatedClasses(final AnnotationDB annotationDb, final Set<String> annotatedClassNames, final Class<? extends Annotation> clazz) {
-        Set<String> classNames = annotationDb.getAnnotationIndex().get(clazz.getName());
-        if (classNames == null || classNames.isEmpty()) {
-            getLog().debug("No classes found with adaptable annotations.");
-        } else {
-            annotatedClassNames.addAll(classNames);
+    private static final class AdaptableAnnotationInfoFilter implements AnnotationInfoFilter {
+        @Override
+        public boolean accept(AnnotationInfo annotationInfo) {
+            return (annotationInfo.getName().equals(Adaptables.class.getName()) || annotationInfo.getName().equals(Adaptable.class.getName()));
         }
     }
 
-    private void addResource() {
-        final String ourRsrcPath = this.outputDirectory.getAbsolutePath();
-        boolean found = false;
-        final Iterator<Resource> rsrcIterator = this.project.getResources().iterator();
-        while (!found && rsrcIterator.hasNext()) {
-            final Resource rsrc = rsrcIterator.next();
-            found = rsrc.getDirectory().equals(ourRsrcPath);
-        }
-        if (!found) {
-            final Resource resource = new Resource();
-            resource.setDirectory(this.outputDirectory.getAbsolutePath());
-            this.project.addResource(resource);
-        }
-
-    }
-
-    private void parseAdaptablesAnnotation(final AnnotationNode annotation, final ClassNode classNode,
-            final Map<String,Object> descriptor) throws JsonException {
-        final Iterator<?> it = annotation.values.iterator();
-        while (it.hasNext()) {
-            Object name = it.next();
-            Object value = it.next();
-            if ("value".equals(name)) {
-                @SuppressWarnings("unchecked")
-                final List<AnnotationNode> annotations = (List<AnnotationNode>) value;
-                for (final AnnotationNode innerAnnotation : annotations) {
-                    if (ADAPTABLE_DESC.equals(innerAnnotation.desc)) {
-                        parseAdaptableAnnotation(innerAnnotation, classNode, descriptor);
-                    }
-                }
-            }
+    private void parseAdaptablesAnnotation(AnnotationParameterValueList annotationParameterValues, String annotatedClassName, final Map<String,Object> descriptor) throws JsonException {
+        // only one mandatory parameter "value" of type Adaptable[]
+        Object[] annotationInfos = (Object[])annotationParameterValues.get(0).getValue();
+        for (Object annotationInfo : annotationInfos) {
+            parseAdaptableAnnotation(((AnnotationInfo)annotationInfo).getParameterValues(), annotatedClassName, descriptor);
         }
     }
 
     @SuppressWarnings("unchecked")
-    private void parseAdaptableAnnotation(final AnnotationNode annotation, final ClassNode annotatedClass,
-            final Map<String,Object> descriptor) throws JsonException {
-        String adaptableClassName = null;
-        List<AnnotationNode> adapters = null;
-
-        final List<?> values = annotation.values;
-
-        final Iterator<?> it = values.iterator();
-        while (it.hasNext()) {
-            Object name = it.next();
-            Object value = it.next();
-
-            if ("adaptableClass".equals(name)) {
-                adaptableClassName = ((Type) value).getClassName();
-            } else if ("adapters".equals(name)) {
-                adapters = (List<AnnotationNode>) value;
-            }
-        }
-
-        if (adaptableClassName == null || adapters == null) {
-            throw new IllegalArgumentException(
-                    "Adaptable annotation is malformed. Expecting a classname and a list of adapter annotation.");
-        }
-
+    private void parseAdaptableAnnotation(AnnotationParameterValueList annotationParameterValues, String annotatedClassName, final Map<String,Object> descriptor) throws JsonException {
+        // two parameters: adaptableClass and Adapter[] adapters
+        String adaptableClassName = ((AnnotationClassRef) annotationParameterValues.get("adaptableClass").getValue()).getName();
+        Object[] adapters = (Object[]) annotationParameterValues.get("adapters").getValue();
+        
         Map<String,Object> adaptableDescription;
         if (descriptor.containsKey(adaptableClassName)) {
             adaptableDescription = (Map<String,Object>)descriptor.get(adaptableClassName);
@@ -229,41 +158,29 @@ public class GenerateAdapterMetadataMojo extends AbstractMojo {
             descriptor.put(adaptableClassName, adaptableDescription);
         }
 
-        for (final AnnotationNode adapter : adapters) {
-            parseAdapterAnnotation(adapter, annotatedClass, adaptableDescription);
+        for (final Object adapter : adapters) {
+            parseAdapterAnnotation(((AnnotationInfo)adapter).getParameterValues(), annotatedClassName, adaptableDescription);
         }
     }
 
-    @SuppressWarnings("unchecked")
-    private void parseAdapterAnnotation(final AnnotationNode annotation, final ClassNode annotatedClass,
-            final Map<String,Object> adaptableDescription) throws JsonException {
+    private void parseAdapterAnnotation(AnnotationParameterValueList annotationParameterValues, String annotatedClassName, final Map<String,Object> adaptableDescription) throws JsonException {
+        AnnotationParameterValue conditionParameterValue = annotationParameterValues.get("condition");
         String condition = null;
-        List<Type> adapterClasses = null;
-
-        final List<?> values = annotation.values;
-
-        final Iterator<?> it = values.iterator();
-        while (it.hasNext()) {
-            final Object name = it.next();
-            final Object value = it.next();
-
-            if (StringUtils.isEmpty(condition)) {
-                condition = String.format(DEFAULT_CONDITION, getSimpleName(annotatedClass));
-            }
-
-            if ("condition".equals(name)) {
-                condition = (String) value;
-            } else if ("value".equals(name)) {
-                adapterClasses = (List<Type>) value;
-            }
+        if (conditionParameterValue != null) {
+            condition = (String) conditionParameterValue.getValue();
         }
+        if (StringUtils.isEmpty(condition)) {
+            condition = String.format(DEFAULT_CONDITION, annotatedClassName);
+        }
+        Object[] adapterClasses = (Object[]) annotationParameterValues.get("value").getValue();
 
         if (adapterClasses == null) {
             throw new IllegalArgumentException("Adapter annotation is malformed. Expecting a list of adapter classes");
         }
 
-        for (final Type adapterClass : adapterClasses) {
-            JsonSupport.accumulate(adaptableDescription, condition, adapterClass.getClassName());
+        for (final Object adapterClass : adapterClasses) {
+            String adapterClassName = ((AnnotationClassRef)adapterClass).getName();
+            JsonSupport.accumulate(adaptableDescription, condition, adapterClassName);
         }
     }
 
