@@ -47,7 +47,6 @@
         <github.project.id>apache/sling-maven-plugin</github.project.id>
         <sling.java.version>8</sling.java.version>
         <mavenVersion>3.3.1</mavenVersion><!-- minimum target Maven version this plugin is compatible with -->
-        <asmVersion>9.3</asmVersion>
         <maven.compiler.target>${sling.java.version}</maven.compiler.target><!-- also set target next to release due to https://issues.apache.org/jira/browse/MPLUGIN-404 -->
     </properties>
 
@@ -262,21 +261,9 @@
         </dependency>
         <!-- use for evaluating Adapter annotations -->
         <dependency>
-            <groupId>net.sf.scannotation</groupId>
-            <artifactId>scannotation</artifactId>
-            <version>1.0.2</version>
-            <scope>compile</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>javassist</groupId>
-                    <artifactId>javassist</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.javassist</groupId>
-            <artifactId>javassist</artifactId>
-            <version>3.18.2-GA</version>
+            <groupId>io.github.classgraph</groupId>
+            <artifactId>classgraph</artifactId>
+            <version>4.8.149</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
@@ -285,20 +272,6 @@
             <version>1.0.0</version>
             <scope>compile</scope>
         </dependency>
-        <!-- https://mvnrepository.com/artifact/org.ow2.asm/asm -->
-        <dependency>
-            <groupId>org.ow2.asm</groupId>
-            <artifactId>asm</artifactId>
-            <version>${asmVersion}</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.ow2.asm</groupId>
-            <artifactId>asm-commons</artifactId>
-            <version>${asmVersion}</version>
-            <scope>compile</scope>
-        </dependency>
-
         <dependency>
             <groupId>org.apache.maven.plugin-tools</groupId>
             <artifactId>maven-plugin-annotations</artifactId>
