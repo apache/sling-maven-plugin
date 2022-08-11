@@ -19,18 +19,13 @@ package org.apache.sling.maven.bundlesupport;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLClassLoader;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 
 import javax.json.Json;
 import javax.json.JsonException;
 import javax.json.JsonWriter;
 
-import org.apache.maven.model.Resource;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -49,8 +44,6 @@ import io.github.classgraph.AnnotationInfoList.AnnotationInfoFilter;
 import io.github.classgraph.AnnotationParameterValue;
 import io.github.classgraph.AnnotationParameterValueList;
 import io.github.classgraph.ClassGraph;
-import io.github.classgraph.ClassGraph.ClasspathElementFilter;
-import io.github.classgraph.ClassGraph.ClasspathElementURLFilter;
 import io.github.classgraph.ClassInfo;
 import io.github.classgraph.ClassInfoList;
 import io.github.classgraph.ScanResult;
