@@ -48,7 +48,7 @@ import org.apache.sling.maven.bundlesupport.fsresource.FileVaultXmlMounter;
 import org.apache.sling.maven.bundlesupport.fsresource.SlingInitialContentMounter;
 
 /**
- * Creates OSGi configurations for the
+ * Create OSGi configurations for the
  * <a href="https://sling.apache.org/documentation/bundles/accessing-filesystem-resources-extensions-fsresource.html">Apache Sling File System Resource Provider</a>.
  * @since 2.2.0
  */

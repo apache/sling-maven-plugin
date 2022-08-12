@@ -160,15 +160,13 @@ public final class SlingInitialContentMounter {
 
     /**
      * Remove configurations from a running OSGi instance for initial content.
-     * @param targetUrl The web console base url
-     * @param bundleFile The artifact (bundle)
+     * @param targetUrl The web console base url (up to the parent resource of the affected bundle)
      * @throws MojoExecutionException Exception
      */
     public void unmount(final URI targetUrl) throws MojoExecutionException {
         log.info("Removing file system provider configurations...");
 
         // remove all current configs for this project
-        // TODO: something is weird here, as target URL only contains the base URL but not the actual bundle name
         final Map<String,FsResourceConfiguration> oldConfigs = helper.getCurrentConfigurations(targetUrl);
         helper.removeConfigurations(targetUrl, oldConfigs);
     }

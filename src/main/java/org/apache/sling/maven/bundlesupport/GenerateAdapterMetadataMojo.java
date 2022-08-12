@@ -49,7 +49,7 @@ import io.github.classgraph.ClassInfoList;
 import io.github.classgraph.ScanResult;
 
 /**
- * Build  <a href="http://sling.apache.org/documentation/the-sling-engine/adapters.html">adapter metadata (JSON)</a> for the Web Console Plugin at {@code /system/console/status-adapters} and
+ * Build <a href="http://sling.apache.org/documentation/the-sling-engine/adapters.html#implementing-adaptable">adapter metadata (JSON)</a> for the Web Console Plugin at {@code /system/console/status-adapters} and
  * {@code /system/console/adapters} from classes annotated with
  * <a href="https://github.com/apache/sling-adapter-annotations">adapter annotations</a>.
  */
