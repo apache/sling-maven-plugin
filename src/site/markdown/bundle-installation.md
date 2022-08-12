@@ -1,8 +1,10 @@
-# Bundle Installation
+# Bundle Installation/Uninstallation
+
+There are three different installation approaches supported by the plugin which behave differently for the installation and uninstallation. In the following section all mechanisms are outlined individually for both use cases.
+
+<!-- MACRO{toc} -->
 
 ## Deploy/Upload/Install
-
-There are three different installation approaches supported by the plugin
 
 ### Felix Web Console
 
@@ -10,13 +12,28 @@ The plugin by default places an *HTTP POST* request to the [Felix Web Console](h
 
 ### WebDAV PUT
 
-It's also possible to use *HTTP PUT* instead of POST leveraging the [WebDAV bundle from Sling](https://sling.apache.org/documentation/development/repository-based-development.html). This will create a new Sling resource containing the OSGi bundle in the underlying repository.
+It's also possible to use *HTTP PUT* instead of POST leveraging the [WebDAV bundle from Sling](https://sling.apache.org/documentation/development/repository-based-development.html). This will create a new JCR node containing the OSGi bundle in the underlying repository.
 From there it needs to be picked up by the [JCR Installer](https://sling.apache.org/documentation/bundles/jcr-installer-provider.html) to be actually installed in the OSGi container. The latter happens *asynchronously*. It is important that the bundle resource is uploaded to a location of the repository which is actually watched by the JCR installer (by default only resources below a resource called `install`).
 
 ### Sling POST Servlet
 
 Since version 2.1.8 you can also leverage the [Sling POST servlet](https://sling.apache.org/documentation/bundles/manipulating-content-the-slingpostservlet-servlets-post.html) for uploading the bundle to the repository. The subsequent installation is being performed *asynchronously* by the JCR Installer (similar to the WebDAV PUT approach).
- 
+
+## Undeploy/Uninstall
+
+### Felix Web Console
+
+The plugin by default places an *HTTP POST* request to the [Felix Web Console](https://felix.apache.org/documentation/subprojects/apache-felix-web-console/web-console-restful-api.html#post-requests). This will achieve both uninstallation of the bundle in one request *synchronously*.
+
+### WebDAV PUT
+
+An *HTTP DELETE* request is issued which is handled by the [WebDAV bundle from Sling](https://sling.apache.org/documentation/development/repository-based-development.html). This will remove the JCR node containing the OSGi bundle in the underlying repository.
+From there it needs to be picked up by the [JCR Installer](https://sling.apache.org/documentation/bundles/jcr-installer-provider.html) to be actually uninstalled in the OSGi container. The latter happens *asynchronously*.
+
+### Sling POST Servlet
+
+An *HTTP DELETE* request is issued which is handled by the [Sling POST servlet](https://sling.apache.org/documentation/bundles/manipulating-content-the-slingpostservlet-servlets-post.html). This will remove the resource containing the OSGi bundle in the underlying repository. The subsequent uninstallation is being performed *asynchronously* by the JCR Installer (similar to the WebDAV PUT approach).
+
 ## Intermediate Resources
 
 For both WebDAV PUT and Sling POST servlet installation, intermediate resources (i.e. non-existing parent resources) 

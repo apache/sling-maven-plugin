@@ -33,11 +33,7 @@ import org.apache.sling.maven.bundlesupport.fsresource.SlingInitialContentMounte
 /**
  * Uninstall an OSGi bundle from a running Sling instance.
  * 
- * The plugin places by default an HTTP POST request to <a href="http://felix.apache.org/documentation/subprojects/apache-felix-web-console/web-console-restful-api.html#post-requests">
- * Felix Web Console</a> to uninstall the bundle.
- * It's also possible to use HTTP DELETE leveraging the <a href="http://sling.apache.org/documentation/development/repository-based-development.html">WebDAV bundle from Sling</a>.
- * or the <a href="http://sling.apache.org/documentation/bundles/manipulating-content-the-slingpostservlet-servlets-post.html">Sling POST servlet</a> to uninstall the bundle. 
- * The chosen method depends on the parameter {@link #deploymentMethod}.
+ * For details refer to <a href="bundle-installation.html">Bundle Uninstallation</a>.
  */
 @Mojo(name = "uninstall")
 public class BundleUninstallMojo extends AbstractBundleInstallMojo {
