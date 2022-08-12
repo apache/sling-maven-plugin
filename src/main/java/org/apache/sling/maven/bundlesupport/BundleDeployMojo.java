@@ -32,7 +32,9 @@ import org.apache.maven.project.MavenProject;
  * This method posts the bundle built by maven to the OSGi Bundle Repository.
  * The plugin uses a <em>multipart/format-data</em> POST request to just post the file to
  * the URL configured in the <code>obr</code> property.
+ * @deprecated Use the OBR goals from the <a href="https://felix.apache.org/documentation/_attachments/components/bundle-plugin/index.html">maven-bundle-plugin</a> instead.
  */
+@Deprecated
 @Mojo(name = "deploy", defaultPhase = LifecyclePhase.DEPLOY)
 public class BundleDeployMojo extends AbstractBundleDeployMojo {
 
