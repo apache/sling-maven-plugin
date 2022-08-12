@@ -50,6 +50,7 @@ public class FelixPostDeployMethod implements DeployMethod {
         // append pseudo path after root URL to not get redirected
         // https://github.com/apache/felix-dev/blob/8e35c940a95c91f3fee09c537dbaf9665e5d027e/webconsole/src/main/java/org/apache/felix/webconsole/internal/core/BundlesServlet.java#L338
         URI postUrl = targetURL.resolve("install");
+        context.getLog().debug("Installing via POST to " + postUrl);
         final HttpPost filePost = new HttpPost(postUrl);
 
         // set referrer
@@ -75,8 +76,9 @@ public class FelixPostDeployMethod implements DeployMethod {
     }
 
     @Override
-    public void undeploy(URI targetURL, File file, String bundleSymbolicName, DeployContext context) throws IOException {
+    public void undeploy(URI targetURL, String bundleSymbolicName, DeployContext context) throws IOException {
         URI postUrl = targetURL.resolve("bundles/" + bundleSymbolicName);
+        context.getLog().debug("Uninstalling via POST to " + postUrl);
         final HttpPost post = new HttpPost(postUrl);
         List<NameValuePair> params = new ArrayList<>();
         params.add(new BasicNameValuePair("action", "uninstall"));

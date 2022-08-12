@@ -36,7 +36,7 @@ public class FsUnMountMojo extends AbstractFsMountMojo {
 
     @Override
     protected void configureSlingInitialContent(CloseableHttpClient httpClient, final URI targetUrl, final File bundleFile) throws MojoExecutionException {
-        new SlingInitialContentMounter(getLog(), httpClient, project).unmount(targetUrl, bundleFile);
+        new SlingInitialContentMounter(getLog(), httpClient, project).unmount(targetUrl);
     }
 
     @Override
