@@ -94,6 +94,7 @@ abstract class AbstractBundleInstallMojo extends AbstractBundleRequestMojo {
      * Whether to add (for install)/remove (for uninstall) the mapping for the
      * <a href="https://sling.apache.org/documentation/bundles/accessing-filesystem-resources-extensions-fsresource.html">Apache Sling File System Resource Provider</a>
      * for the <a href="https://sling.apache.org/documentation/bundles/content-loading-jcr-contentloader.html#initial-content-loading">bundle's initial content</a>.
+     * This parameter must not be {@code true} with bundles resolved from the Maven repository.
      */
     @Parameter(property="sling.mountByFS", defaultValue = "false", required = true)
     boolean mountByFS;
@@ -145,7 +146,7 @@ abstract class AbstractBundleInstallMojo extends AbstractBundleRequestMojo {
                 .mimeType(mimeType)
                 .refreshPackages(refreshPackages));
             getLog().info("Bundle installed successfully");
-            if ( mountByFS ) {
+            if (mountByFS) {
                 configure(httpClient, getConsoleTargetURL(), bundleFile);
             }
         } catch (IOException e) {

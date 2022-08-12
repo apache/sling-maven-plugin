@@ -106,9 +106,12 @@ public class BundleInstallFileMojo extends AbstractBundleInstallMojo {
         File fileName = bundleFileName;
         if (fileName == null) {
             fileName = resolveBundleFileFromArtifact();
-
             if (fileName == null) {
                 throw new MojoExecutionException("Must provide either sling.file or sling.artifact parameters");
+            }
+            if (mountByFS) {
+                getLog().warn("The parameter 'mountByFS' is only supported with files outside the Maven repository and therefore ignored in this context!");
+                mountByFS = false;
             }
         }
 
