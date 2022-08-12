@@ -37,6 +37,7 @@ import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Parameter;
 
+@Deprecated
 abstract class AbstractBundleDeployMojo extends AbstractBundleRequestMojo {
 
     /**
