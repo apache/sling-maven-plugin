@@ -46,7 +46,7 @@ import org.codehaus.plexus.util.Scanner;
 import org.sonatype.plexus.build.incremental.BuildContext;
 
 /**
- * The <code>validate</code> goal validates all json files of a project. It only ensures they are well-formed but not that they are valid against a schema.
+ * Validate all JSON files of a project. It only ensures they are well-formed but not that they are valid against a certain schema.
  */
 @Mojo(name = "validate", defaultPhase = LifecyclePhase.PROCESS_RESOURCES)
 public class ValidationMojo extends AbstractMojo {
