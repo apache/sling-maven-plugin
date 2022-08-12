@@ -43,10 +43,22 @@ import org.apache.sling.maven.bundlesupport.fsresource.SlingInitialContentMounte
 public class BundleUninstallMojo extends AbstractBundleInstallMojo {
 
     /**
-     * The name of the generated JAR file.
+     * The path of bundle file to uninstall.
+     * The file is only used to determine the file name or bundle symbolic name.
+     * This parameter is only effective if {@link #bundleName} is not set.
+     * @deprecated Use {@link #bundleName} instead
      */
+    @Deprecated
     @Parameter(property = "sling.file", defaultValue = "${project.build.directory}/${project.build.finalName}.jar")
     private File bundleFileName;
+
+    /**
+     * The bundles's file/resource name without path (for all {@link #deploymentMethod}s except for {@code WebConsole}) or
+     * its symbolic name.
+     * If this parameter is set, it takes precedence over {@link #bundleFileName}.
+     */
+    @Parameter(property = "sling.bundle.name")
+    private String bundleName;
 
     @Override
     protected File getBundleFileName() {
@@ -58,25 +70,36 @@ public class BundleUninstallMojo extends AbstractBundleInstallMojo {
      */
     @Override
     public void execute() throws MojoExecutionException {
-        // only uninstall if packaging as an osgi-bundle
-        final File bundleFile = getBundleFileName();
-        final String bundleName = getBundleSymbolicName(bundleFile);
-        if (bundleName == null) {
-            getLog().info(bundleFile + " is not an OSGi Bundle, not uploading");
-            return;
+        final String bundleName;
+        if (this.bundleName == null) {
+            // only uninstall if file is really an OSGi bundle
+            final File bundleFile = getBundleFileName();
+            String bundleSymbolicName = getBundleSymbolicName(bundleFile);
+            if (bundleSymbolicName == null) {
+                getLog().info(bundleFile + " is not an OSGi Bundle, not uploading");
+                return;
+            }
+            if (getDeploymentMethod() != BundleDeploymentMethod.WebConsole) {
+                bundleName = bundleFile.getName();
+            } else {
+                bundleName = bundleSymbolicName;
+            }
+        } else {
+            bundleName = this.bundleName;
         }
 
         URI targetURL = getTargetURL();
 
         BundleDeploymentMethod deployMethod = getDeploymentMethod();
 
-
         try (CloseableHttpClient httpClient = getHttpClient()){
-            configure(httpClient, targetURL, bundleFile);
+            if (mountByFS) {
+                configure(httpClient, targetURL, null);
+            }
             getLog().info(
                     "Uninstalling Bundle " + bundleName + " from "
                             + targetURL + " via " + deployMethod + "...");
-            deployMethod.execute().undeploy(targetURL, bundleFile, bundleName, new DeployContext()
+            deployMethod.execute().undeploy(targetURL, bundleName, new DeployContext()
                     .log(getLog())
                     .httpClient(httpClient)
                     .failOnError(failOnError)
@@ -95,7 +118,7 @@ public class BundleUninstallMojo extends AbstractBundleInstallMojo {
 
     @Override
     protected void configure(CloseableHttpClient httpClient, final URI targetURL, final File file) throws MojoExecutionException {
-        new SlingInitialContentMounter(getLog(), httpClient, project).unmount(targetURL, file);
+        new SlingInitialContentMounter(getLog(), httpClient, project).unmount(targetURL);
     }
     
 }

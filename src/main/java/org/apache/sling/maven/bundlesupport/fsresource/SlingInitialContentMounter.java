@@ -164,10 +164,11 @@ public final class SlingInitialContentMounter {
      * @param bundleFile The artifact (bundle)
      * @throws MojoExecutionException Exception
      */
-    public void unmount(final URI targetUrl, final File bundleFile) throws MojoExecutionException {
+    public void unmount(final URI targetUrl) throws MojoExecutionException {
         log.info("Removing file system provider configurations...");
 
         // remove all current configs for this project
+        // TODO: something is weird here, as target URL only contains the base URL but not the actual bundle name
         final Map<String,FsResourceConfiguration> oldConfigs = helper.getCurrentConfigurations(targetUrl);
         helper.removeConfigurations(targetUrl, oldConfigs);
     }

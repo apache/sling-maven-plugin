@@ -61,8 +61,8 @@ public class SlingPostDeployMethod implements DeployMethod {
     }
 
     @Override
-    public void undeploy(URI targetURL, File file, String bundleSymbolicName, DeployContext context) throws IOException {
-        final HttpPost post = new HttpPost(getURLWithFilename(targetURL, file.getName()));
+    public void undeploy(URI targetURL, String bundleName, DeployContext context) throws IOException {
+        final HttpPost post = new HttpPost(getURLWithFilename(targetURL, bundleName));
 
         List<NameValuePair> params = new ArrayList<>();
         // Request JSON response from Sling instead of standard HTML

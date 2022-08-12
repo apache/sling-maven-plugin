@@ -91,11 +91,12 @@ abstract class AbstractBundleInstallMojo extends AbstractBundleRequestMojo {
     private boolean refreshPackages;
 
     /**
-     * Whether to add the mapping for the
-     * <a href="https://sling.apache.org/documentation/bundles/accessing-filesystem-resources-extensions-fsresource.html">Apache Sling File System Resource Provider</a>.
+     * Whether to add (for install)/remove (for uninstall) the mapping for the
+     * <a href="https://sling.apache.org/documentation/bundles/accessing-filesystem-resources-extensions-fsresource.html">Apache Sling File System Resource Provider</a>
+     * for the <a href="https://sling.apache.org/documentation/bundles/content-loading-jcr-contentloader.html#initial-content-loading">bundle's initial content</a>.
      */
     @Parameter(property="sling.mountByFS", defaultValue = "false", required = true)
-    private boolean mountByFS;
+    boolean mountByFS;
 
     /**
      * The Maven project.

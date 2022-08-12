@@ -58,8 +58,8 @@ public class WebDavPutDeployMethod implements DeployMethod {
     }
 
     @Override
-    public void undeploy(URI targetURL, File file, String bundleSymbolicName, DeployContext context) throws IOException {
-        final HttpDelete delete = new HttpDelete(SlingPostDeployMethod.getURLWithFilename(targetURL, file.getName()));
+    public void undeploy(URI targetURL, String bundleName, DeployContext context) throws IOException {
+        final HttpDelete delete = new HttpDelete(SlingPostDeployMethod.getURLWithFilename(targetURL, bundleName));
         // sanity check on response
         // must answer 204 (no content)
         // https://github.com/apache/jackrabbit/blob/88490006e6bdba0b0ad52d209b1bfa040477c2ec/jackrabbit-webdav/src/main/java/org/apache/jackrabbit/webdav/server/AbstractWebdavServlet.java#L763
@@ -83,6 +83,11 @@ public class WebDavPutDeployMethod implements DeployMethod {
         // this never returns a body
     }
 
+    /**
+     * Throws {@link HttpResponseException} for all response codes except for the accepted ones.
+     * Returns the response code otherwise.
+     *
+     */
     private static final class ResponseCodeEnforcingResponseHandler implements HttpClientResponseHandler<Integer> {
 
         private final List<Integer> allowedCodes;
@@ -94,12 +99,11 @@ public class WebDavPutDeployMethod implements DeployMethod {
         public Integer handleResponse(ClassicHttpResponse response) throws HttpException, IOException {
             final HttpEntity entity = response.getEntity();
             EntityUtils.consume(entity);
-            if (allowedCodes.contains(response.getCode())) {
-                throw new HttpResponseException(response.getCode(), response.getReasonPhrase());
+            if (!allowedCodes.contains(response.getCode())) {
+                throw new HttpResponseException(response.getCode(), "Unexpected response code " + response.getCode() + ": " + response.getReasonPhrase());
             }
             return null;
         }
-        
     }
 
     private void performMkCol(URI uri, DeployContext context) throws IOException {
