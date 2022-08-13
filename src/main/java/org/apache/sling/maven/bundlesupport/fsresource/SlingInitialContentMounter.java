@@ -29,6 +29,7 @@ import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.maven.model.Resource;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -49,19 +50,19 @@ public final class SlingInitialContentMounter {
     private final MavenProject project;
     private final FsMountHelper helper;
 
-    public SlingInitialContentMounter(Log log, CloseableHttpClient httpClient, MavenProject project) {
+    public SlingInitialContentMounter(Log log, CloseableHttpClient httpClient, RequestConfig.Builder requestConfigBuilder, MavenProject project) {
         this.log = log;
         this.project = project;
-        this.helper = new FsMountHelper(log, httpClient, project);
+        this.helper = new FsMountHelper(log, httpClient, requestConfigBuilder, project);
     }
 
     /**
      * Add configurations to a running OSGi instance for initial content.
-     * @param targetUrl The web console base url
+     * @param consoleTargetUrl The web console base url
      * @param bundleFile The artifact (bundle)
      * @throws MojoExecutionException Exception
      */
-    public void mount(final URI targetUrl, final File bundleFile) throws MojoExecutionException {
+    public void mount(final URI consoleTargetUrl, final File bundleFile) throws MojoExecutionException {
         // first, let's get the manifest and see if initial content is configured
         ManifestHeader header = null;
         try {
@@ -82,7 +83,7 @@ public final class SlingInitialContentMounter {
 
         log.info("Trying to configure file system provider...");
         // quick check if resources are configured
-        final List resources = project.getResources();
+        final List<Resource> resources = project.getResources();
         if ( resources == null || resources.size() == 0 ) {
             throw new MojoExecutionException("No resources configured for this project.");
         }
@@ -107,7 +108,7 @@ public final class SlingInitialContentMounter {
             // search the path in the resources (usually this should be the first resource
             // entry but this might be reconfigured
             File dir = null;
-            final Iterator i = resources.iterator();
+            final Iterator<Resource> i = resources.iterator();
             while ( dir == null && i.hasNext() ) {
                 final Resource rsrc = (Resource)i.next();
                 String child = path;
@@ -116,6 +117,7 @@ public final class SlingInitialContentMounter {
                 if ( targetPath != null && !targetPath.endsWith("/") ) {
                     targetPath = targetPath + "/";
                 }
+                log.debug("Checking if project resource '" + rsrc.getDirectory() + "' with target path '" + targetPath + "' is a potential mount point for " + path + " ..." );
                 if ( targetPath != null && path != null && path.startsWith(targetPath) ) {
                     child = child.substring(targetPath.length());
                 }
@@ -145,30 +147,30 @@ public final class SlingInitialContentMounter {
                 }
                 importOptions.append("ignoreImportProviders:=\"" + ignoreImportProvidersValue + "\"");
             }
-            
             cfgs.add(new FsResourceConfiguration()
                     .fsMode(FsMode.INITIAL_CONTENT)
-                    .contentRootDir(dir.getAbsolutePath())
-                    .providerRootPath(installPath)
+                    .fsRootPath(dir.getAbsoluteFile())
+                    .resourceRootPath(installPath)
                     .initialContentImportOptions(importOptions.toString()));
+            log.info("Created new configuration for resource path " + installPath);
         }
 
         if (!cfgs.isEmpty()) {
-            helper.addConfigurations(targetUrl, cfgs);
+            helper.addConfigurations(consoleTargetUrl, cfgs);
         }
     }
 
     /**
      * Remove configurations from a running OSGi instance for initial content.
-     * @param targetUrl The web console base url (up to the parent resource of the affected bundle)
+     * @param consoleTargetUrl The web console base url
      * @throws MojoExecutionException Exception
      */
-    public void unmount(final URI targetUrl) throws MojoExecutionException {
+    public void unmount(final URI consoleTargetUrl) throws MojoExecutionException {
         log.info("Removing file system provider configurations...");
 
         // remove all current configs for this project
-        final Map<String,FsResourceConfiguration> oldConfigs = helper.getCurrentConfigurations(targetUrl);
-        helper.removeConfigurations(targetUrl, oldConfigs);
+        final Map<String,FsResourceConfiguration> oldConfigs = helper.getCurrentConfigurations(consoleTargetUrl);
+        helper.removeConfigurations(consoleTargetUrl, oldConfigs);
     }
     
     /**

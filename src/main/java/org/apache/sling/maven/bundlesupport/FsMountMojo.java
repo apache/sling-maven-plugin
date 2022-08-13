@@ -22,15 +22,18 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import javax.json.JsonArray;
 import javax.json.JsonException;
 import javax.json.JsonObject;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.hc.client5.http.HttpResponseException;
 import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.apache.hc.client5.http.impl.classic.BasicHttpClientResponseHandler;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.core5.http.HttpStatus;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.repository.ArtifactRepository;
 import org.apache.maven.artifact.resolver.ArtifactResolutionRequest;
@@ -50,6 +53,8 @@ import org.apache.sling.maven.bundlesupport.fsresource.SlingInitialContentMounte
 /**
  * Create OSGi configurations for the
  * <a href="https://sling.apache.org/documentation/bundles/accessing-filesystem-resources-extensions-fsresource.html">Apache Sling File System Resource Provider</a>.
+ * In case a bundle file is provided via {@link AbstractFsMountMojo#bundleFileName} the configuration for its <a href="https://sling.apache.org/documentation/bundles/content-loading-jcr-contentloader.html#initial-content-loading">initial content</a> is created.
+ * Otherwise it tries to detect a FileVault XML layout within {@link AbstractFsMountMojo#fileVaultJcrRootFile} or the project's base directory and potentially creates a configuration for each path in the package's {@code filter.xml}. 
  * @since 2.2.0
  */
 @Mojo(name = "fsmount", requiresProject = true)
@@ -164,12 +169,12 @@ public class FsMountMojo extends AbstractFsMountMojo {
 
     @Override
     protected void configureSlingInitialContent(CloseableHttpClient httpClient, final URI targetUrl, final File bundleFile) throws MojoExecutionException {
-        new SlingInitialContentMounter(getLog(), getHttpClient(), project).mount(targetUrl, bundleFile);
+        new SlingInitialContentMounter(getLog(), getHttpClient(), getRequestConfigBuilder(), project).mount(targetUrl, bundleFile);
     }
 
     @Override
     protected void configureFileVaultXml(CloseableHttpClient httpClient, URI targetUrl, File jcrRootFile, File filterXmlFile) throws MojoExecutionException {
-        new FileVaultXmlMounter(getLog(), httpClient, project).mount(targetUrl, jcrRootFile, filterXmlFile);
+        new FileVaultXmlMounter(getLog(), httpClient, getRequestConfigBuilder(), project).mount(targetUrl, jcrRootFile, filterXmlFile);
     }
 
     @Override
@@ -198,6 +203,8 @@ public class FsMountMojo extends AbstractFsMountMojo {
                     deployBundle(httpClient, bundle, targetUrl);
                 }
                 break;
+            } else {
+                throw new MojoExecutionException("Target server does not meet prerequisites for this goal. Haven't found the necessary bundles: " + bundlePrerequisite.getPreconditions().stream().map(BundlePrerequisite.Bundle::toString).collect(Collectors.joining(", ")));
             }
         }
     }
@@ -208,7 +215,10 @@ public class FsMountMojo extends AbstractFsMountMojo {
                 getLog().debug("Bundle " + bundle.getSymbolicName() + " " + bundle.getOsgiVersion() + " (or higher) already installed.");
                 return;
             }
-            
+        } catch(IOException e) {
+            throw new MojoExecutionException("Error getting installation status of " + bundle + " via " + targetUrl + ": " + e.getMessage(), e);
+        }
+        try {
             getLog().info("Installing Bundle " + bundle.getSymbolicName() + " " + bundle.getOsgiVersion() + " to "
                         + targetUrl + " via " + deploymentMethod);
             
@@ -255,11 +265,12 @@ public class FsMountMojo extends AbstractFsMountMojo {
      * @throws MojoExecutionException
      */
     private String getBundleInstalledVersion(CloseableHttpClient httpClient, final String bundleSymbolicName, final URI targetUrl) throws IOException {
-        final URI getUrl = targetUrl.resolve( "/bundles/" + bundleSymbolicName + ".json");
+        final URI getUrl = targetUrl.resolve( "/system/console/bundles/" + bundleSymbolicName + ".json");
+        getLog().debug("Get bundle data via request to " + getUrl);
         final HttpGet get = new HttpGet(getUrl);
 
-        final String jsonText = httpClient.execute(get, new BasicHttpClientResponseHandler());
         try {
+            final String jsonText = httpClient.execute(get, new BasicHttpClientResponseHandler());
             JsonObject response = JsonSupport.parseObject(jsonText);
             JsonArray data = response.getJsonArray("data");
             if (!data.isEmpty()) {
@@ -270,6 +281,12 @@ public class FsMountMojo extends AbstractFsMountMojo {
         } catch (JsonException ex) {
             throw new IOException("Reading bundle data from " + getUrl
                     + " failed, cause: " + ex.getMessage(), ex);
+        } catch (HttpResponseException e) {
+            // accept 404 response
+            if (e.getStatusCode() == HttpStatus.SC_NOT_FOUND) {
+                return null;
+            }
+            throw e;
         }
         // no version detected, bundle is not installed
         return null;

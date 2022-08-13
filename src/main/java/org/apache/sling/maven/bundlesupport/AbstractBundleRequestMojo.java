@@ -93,6 +93,23 @@ abstract class AbstractBundleRequestMojo extends AbstractMojo {
     protected boolean failOnError;
 
     /**
+     * HTTP connection timeout (in seconds). Determines the timeout until a new connection is fully established.
+     * This may also include transport security negotiation exchanges
+     * such as {@code SSL} or {@code TLS} protocol negotiation).
+     * @since 3.0.0
+     */
+    @Parameter(property = "sling.httpConnectTimeoutSec", defaultValue = "10")
+    private int httpConnectTimeoutSec;
+
+    /**
+     * HTTP response timeout (in seconds). Determines the timeout until arrival of a response from the opposite
+     * endpoint.
+     * @since 3.0.0
+     */
+    @Parameter(property = "sling.httpResponseTimeoutSec", defaultValue = "60")
+    private int httpResponseTimeoutSec;
+
+    /**
      * Returns the symbolic name of the given bundle. If the
      * <code>jarFile</code> does not contain a manifest with a
      * <code>Bundle-SymbolicName</code> header <code>null</code> is
@@ -191,14 +208,17 @@ abstract class AbstractBundleRequestMojo extends AbstractMojo {
         // restrict to the Sling URL only
         final HttpHost target = new HttpHost(getTargetURL().getScheme(), getTargetURL().getHost(), getTargetURL().getPort());
 
-        RequestConfig requestConfig = RequestConfig.custom().setConnectTimeout(Timeout.ofSeconds(5)).build();
-        
         return HttpClients.custom()
-                .setDefaultRequestConfig(requestConfig)
+                .setDefaultRequestConfig(getRequestConfigBuilder().build())
                 .addRequestInterceptorFirst(new PreemptiveBasicAuthInterceptor(basicAuth, target, getLog()))
                 .build();
     }
 
+    protected RequestConfig.Builder getRequestConfigBuilder() {
+        return RequestConfig.custom()
+            .setConnectTimeout(Timeout.ofSeconds(httpConnectTimeoutSec))
+            .setResponseTimeout(Timeout.ofSeconds(httpResponseTimeoutSec));
+    }
 
     private static final class PreemptiveBasicAuthInterceptor implements HttpRequestInterceptor {
 
