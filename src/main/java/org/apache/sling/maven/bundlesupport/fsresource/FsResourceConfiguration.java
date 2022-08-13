@@ -18,6 +18,8 @@
  */
 package org.apache.sling.maven.bundlesupport.fsresource;
 
+import java.io.File;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -27,8 +29,8 @@ import org.apache.commons.lang3.builder.ToStringStyle;
 class FsResourceConfiguration {
 
     private FsMode fsMode;
-    private String providerRootPath;
-    private String contentRootDir;
+    private String resourceRootPath; // absolute resource path
+    private File fsRootPath; // absolute filesystem path
     private String initialContentImportOptions;
     private String fileVaultFilterXml;
 
@@ -49,25 +51,29 @@ class FsResourceConfiguration {
         return this;
     }
 
-    public String getProviderRootPath() {
-        return providerRootPath;
+    public String getResourceRootPath() {
+        return resourceRootPath;
     }
-    public FsResourceConfiguration providerRootPath(String value) {
-        this.providerRootPath = value;
+    public FsResourceConfiguration resourceRootPath(String value) {
+        this.resourceRootPath = value;
         return this;
     }
 
-    public String getContentRootDir() {
-        return contentRootDir;
+    public File getFsRootPath() {
+        return fsRootPath;
     }
-    public FsResourceConfiguration contentRootDir(String value) {
-        this.contentRootDir = value;
+    public FsResourceConfiguration fsRootPath(File value) {
+        if (!value.isAbsolute()) {
+            throw new IllegalArgumentException("The given filesystem path must be absolute");
+        }
+        this.fsRootPath = value;
         return this;
     }
 
     public String getInitialContentImportOptions() {
         return initialContentImportOptions;
     }
+
     public FsResourceConfiguration initialContentImportOptions(String value) {
         this.initialContentImportOptions = value;
         return this;
@@ -76,19 +82,22 @@ class FsResourceConfiguration {
     public String getStringVaultFilterXml() {
         return fileVaultFilterXml;
     }
+
     public FsResourceConfiguration fileVaultFilterXml(String value) {
         this.fileVaultFilterXml = value;
         return this;
     }
-    
+
     @Override
     public int hashCode() {
         return HashCodeBuilder.reflectionHashCode(this);
     }
+
     @Override
     public boolean equals(Object obj) {
         return EqualsBuilder.reflectionEquals(this, obj);
     }
+
     @Override
     public String toString() {
         return ToStringBuilder.reflectionToString(this, ToStringStyle.NO_CLASS_NAME_STYLE);

@@ -129,7 +129,12 @@ public final class BundlePrerequisite {
                 return this.version;
             }
         }
-        
+
+        @Override
+        public String toString() {
+            return "Bundle [groupId=" + groupId + ", artifactId=" + artifactId + ", version=" + version + ", symbolicName=" + symbolicName
+                    + "]";
+        }
     }
 
 }

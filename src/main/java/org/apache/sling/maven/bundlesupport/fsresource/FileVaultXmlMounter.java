@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.jackrabbit.vault.fs.api.PathFilterSet;
 import org.apache.jackrabbit.vault.fs.api.WorkspaceFilter;
@@ -42,19 +43,19 @@ public final class FileVaultXmlMounter {
     private final Log log;
     private final FsMountHelper helper;
 
-    public FileVaultXmlMounter(Log log, CloseableHttpClient httpClient, MavenProject project) {
+    public FileVaultXmlMounter(Log log, CloseableHttpClient httpClient, RequestConfig.Builder requestConfigBuilder, MavenProject project) {
         this.log = log;
-        this.helper = new FsMountHelper(log, httpClient, project);
+        this.helper = new FsMountHelper(log, httpClient, requestConfigBuilder, project);
     }
 
     /**
      * Add configurations to a running OSGi instance for FileVault XML
-     * @param targetUrl The web console base url
+     * @param consoleTargetUrl The web console base url
      * @param jcrRootFile jcr_root directory
      * @param filterXmlFile FileVault Filter XML file
      * @throws MojoExecutionException Exception
      */
-    public void mount(final URI targetUrl, final File jcrRootFile, final File filterXmlFile) throws MojoExecutionException {
+    public void mount(final URI consoleTargetUrl, final File jcrRootFile, final File filterXmlFile) throws MojoExecutionException {
         log.info("Trying to configure file system provider...");
 
         // create config for each path defined in filter
@@ -63,29 +64,30 @@ public final class FileVaultXmlMounter {
         for (PathFilterSet filterSet : workspaceFilter.getFilterSets()) {
             cfgs.add(new FsResourceConfiguration()
                     .fsMode(FsMode.FILEVAULT_XML)
-                    .contentRootDir(jcrRootFile.getAbsolutePath())
-                    .providerRootPath(filterSet.getRoot())
+                    .fsRootPath(jcrRootFile.getAbsoluteFile())
+                    .resourceRootPath(filterSet.getRoot())
                     .fileVaultFilterXml(filterXmlFile.getAbsolutePath()));
+            log.info("Created new configuration for resource path " + filterSet.getRoot());
         }
      
         if (!cfgs.isEmpty()) {
-            helper.addConfigurations(targetUrl, cfgs);
+            helper.addConfigurations(consoleTargetUrl, cfgs);
         }
     }
     
     /**
      * Remove configurations to a running OSGi instance for FileVault XML
-     * @param targetUrl The web console base url
+     * @param consoleTargetUrl The web console base url
      * @param jcrRootFile jcr_root directory
      * @param filterXmlFile FileVault Filter XML file
      * @throws MojoExecutionException Exception
      */
-    public void unmount(final URI targetUrl, final File jcrRootFile, final File filterXmlFile) throws MojoExecutionException {
+    public void unmount(final URI consoleTargetUrl, final File jcrRootFile, final File filterXmlFile) throws MojoExecutionException {
         log.info("Removing file system provider configurations...");
 
         // remove all current configs for this project
-        final Map<String,FsResourceConfiguration> oldConfigs = helper.getCurrentConfigurations(targetUrl);
-        helper.removeConfigurations(targetUrl, oldConfigs);
+        final Map<String,FsResourceConfiguration> oldConfigs = helper.getCurrentConfigurations(consoleTargetUrl);
+        helper.removeConfigurations(consoleTargetUrl, oldConfigs);
     }
         
     private WorkspaceFilter getWorkspaceFilter(final File filterXmlFile) throws MojoExecutionException {

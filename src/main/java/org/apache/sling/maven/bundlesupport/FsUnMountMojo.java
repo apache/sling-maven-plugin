@@ -29,6 +29,8 @@ import org.apache.sling.maven.bundlesupport.fsresource.SlingInitialContentMounte
 /**
  * Remove OSGi configurations for the 
  * <a href="https://sling.apache.org/documentation/bundles/accessing-filesystem-resources-extensions-fsresource.html">Apache Sling File System Resource Provider</a>.
+ * In case a bundle file is provided via {@link AbstractFsMountMojo#bundleFileName} the configuration for its <a href="https://sling.apache.org/documentation/bundles/content-loading-jcr-contentloader.html#initial-content-loading">initial content</a> is removed.
+ * Otherwise it tries to detect a FileVault XML layout within {@link AbstractFsMountMojo#fileVaultJcrRootFile} or the project's base directory and potentially removes the configurations for each path in the package's {@code filter.xml}. 
  * @since 2.2.0
  */
 @Mojo(name = "fsunmount", requiresProject = true)
@@ -36,12 +38,12 @@ public class FsUnMountMojo extends AbstractFsMountMojo {
 
     @Override
     protected void configureSlingInitialContent(CloseableHttpClient httpClient, final URI targetUrl, final File bundleFile) throws MojoExecutionException {
-        new SlingInitialContentMounter(getLog(), httpClient, project).unmount(targetUrl);
+        new SlingInitialContentMounter(getLog(), httpClient, getRequestConfigBuilder(), project).unmount(targetUrl);
     }
 
     @Override
     protected void configureFileVaultXml(CloseableHttpClient httpClient, URI targetUrl, File jcrRootFile, File filterXmlFile) throws MojoExecutionException {
-        new FileVaultXmlMounter(getLog(), httpClient, project).unmount(targetUrl, jcrRootFile, filterXmlFile);
+        new FileVaultXmlMounter(getLog(), httpClient, getRequestConfigBuilder(), project).unmount(targetUrl, jcrRootFile, filterXmlFile);
     }
 
     @Override

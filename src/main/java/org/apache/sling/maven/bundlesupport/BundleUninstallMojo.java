@@ -114,7 +114,7 @@ public class BundleUninstallMojo extends AbstractBundleInstallMojo {
 
     @Override
     protected void configure(CloseableHttpClient httpClient, final URI targetURL, final File file) throws MojoExecutionException {
-        new SlingInitialContentMounter(getLog(), httpClient, project).unmount(targetURL);
+        new SlingInitialContentMounter(getLog(), httpClient, getRequestConfigBuilder(), project).unmount(targetURL);
     }
     
 }

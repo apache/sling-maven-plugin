@@ -21,7 +21,6 @@ package org.apache.sling.maven.bundlesupport.deploy.method;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
-import java.util.Arrays;
 import java.util.List;
 
 import org.apache.hc.client5.http.HttpResponseException;
@@ -29,13 +28,8 @@ import org.apache.hc.client5.http.classic.methods.HttpDelete;
 import org.apache.hc.client5.http.classic.methods.HttpHead;
 import org.apache.hc.client5.http.classic.methods.HttpPut;
 import org.apache.hc.client5.http.impl.classic.BasicHttpClientResponseHandler;
-import org.apache.hc.core5.http.ClassicHttpResponse;
 import org.apache.hc.core5.http.ContentType;
-import org.apache.hc.core5.http.HttpEntity;
-import org.apache.hc.core5.http.HttpException;
 import org.apache.hc.core5.http.HttpStatus;
-import org.apache.hc.core5.http.io.HttpClientResponseHandler;
-import org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.apache.hc.core5.http.io.entity.FileEntity;
 import org.apache.sling.maven.bundlesupport.deploy.DeployContext;
 import org.apache.sling.maven.bundlesupport.deploy.DeployMethod;
@@ -81,29 +75,6 @@ public class WebDavPutDeployMethod implements DeployMethod {
         HttpHead head = new HttpHead(uri);
         context.getHttpClient().execute(head, new BasicHttpClientResponseHandler());
         // this never returns a body
-    }
-
-    /**
-     * Throws {@link HttpResponseException} for all response codes except for the accepted ones.
-     * Returns the response code otherwise.
-     *
-     */
-    private static final class ResponseCodeEnforcingResponseHandler implements HttpClientResponseHandler<Integer> {
-
-        private final List<Integer> allowedCodes;
-        public ResponseCodeEnforcingResponseHandler(Integer... allowedCodes) {
-            this.allowedCodes = Arrays.asList(allowedCodes);
-        }
-
-        @Override
-        public Integer handleResponse(ClassicHttpResponse response) throws HttpException, IOException {
-            final HttpEntity entity = response.getEntity();
-            EntityUtils.consume(entity);
-            if (!allowedCodes.contains(response.getCode())) {
-                throw new HttpResponseException(response.getCode(), "Unexpected response code " + response.getCode() + ": " + response.getReasonPhrase());
-            }
-            return null;
-        }
     }
 
     private void performMkCol(URI uri, DeployContext context) throws IOException {

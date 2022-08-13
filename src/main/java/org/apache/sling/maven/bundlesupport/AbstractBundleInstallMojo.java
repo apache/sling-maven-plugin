@@ -160,8 +160,8 @@ abstract class AbstractBundleInstallMojo extends AbstractBundleRequestMojo {
         }
     }
     
-    protected void configure(CloseableHttpClient httpClient, final URI targetURL, final File file) throws MojoExecutionException {
-        new SlingInitialContentMounter(getLog(), httpClient, project).mount(targetURL, file);
+    protected void configure(CloseableHttpClient httpClient, final URI consoleTargetURL, final File file) throws MojoExecutionException {
+        new SlingInitialContentMounter(getLog(), httpClient, getRequestConfigBuilder(), project).mount(consoleTargetURL, file);
     }
 
     /**
