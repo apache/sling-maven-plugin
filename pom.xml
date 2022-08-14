@@ -159,7 +159,7 @@
                         <pomInclude>**/pom.xml</pomInclude>
                     </pomIncludes>
                     <postBuildHookScript>verify</postBuildHookScript>
-                    <localRepositoryPath>${project.build.directory}/it-repo</localRepositoryPath>
+                    <!-- <localRepositoryPath>${project.build.directory}/it-repo</localRepositoryPath>  -->
                     <properties>
                         <sling.url>http://localhost:${starter-its.http.port}</sling.url>
                     </properties>
@@ -303,6 +303,23 @@
     </dependencies>
 
     <profiles>
+        <profile>
+            <!-- extend jacoco profile as long as https://issues.apache.org/jira/browse/SLING-11529 is not fixed -->
+            <id>jacoco-report</id>
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-invoker-plugin</artifactId>
+                            <configuration>
+                                <mavenOpts>${jacoco.command}</mavenOpts>
+                            </configuration>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
+        </profile>
         <!-- This plugin's configuration is used to store Eclipse m2e settings only. It has no influence on the Maven build itself. -->
         <profile>
             <id>only-eclipse</id>
