@@ -18,22 +18,12 @@
 package org.apache.sling.maven.bundlesupport;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
 
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.codehaus.plexus.util.StringUtils;
-import org.eclipse.aether.RepositorySystem;
-import org.eclipse.aether.RepositorySystemSession;
 import org.eclipse.aether.artifact.DefaultArtifact;
-import org.eclipse.aether.repository.RemoteRepository;
-import org.eclipse.aether.repository.RepositoryPolicy;
-import org.eclipse.aether.resolution.ArtifactRequest;
-import org.eclipse.aether.resolution.ArtifactResolutionException;
-import org.eclipse.aether.resolution.ArtifactResult;
 
 /**
  * Install an OSGi bundle from a given file path or Maven coordinates (resolved from the repository) to a running Sling instance.
@@ -92,15 +82,6 @@ public class BundleInstallFileMojo extends AbstractBundleInstallMojo {
     @Parameter(property="sling.artifact")
     private String artifact;
 
-    @Component
-    private RepositorySystem repoSystem;
-
-    @Parameter( defaultValue = "${repositorySystemSession}", readonly = true, required = true )
-    private RepositorySystemSession repoSession;
-
-    @Parameter( defaultValue = "${project.remoteProjectRepositories}", readonly = true, required = true )
-    private List<RemoteRepository> repositories;
-
     @Override
     protected File getBundleFileName() throws MojoExecutionException {
         File fileName = bundleFileName;
@@ -140,27 +121,5 @@ public class BundleInstallFileMojo extends AbstractBundleInstallMojo {
         File resolvedArtifactFile = resolveArtifact(new DefaultArtifact(groupId, artifactId, classifier, packaging, version));
         getLog().info("Resolved artifact to " + resolvedArtifactFile.getAbsolutePath());
         return resolvedArtifactFile;
-    }
-
-    protected File resolveArtifact(org.eclipse.aether.artifact.Artifact artifact) throws MojoExecutionException {
-        ArtifactRequest req = new ArtifactRequest(artifact, getRemoteRepositoriesWithUpdatePolicy(repositories, RepositoryPolicy.UPDATE_POLICY_ALWAYS), null);
-        ArtifactResult resolutionResult;
-        try {
-            resolutionResult = repoSystem.resolveArtifact(repoSession, req);
-            return resolutionResult.getArtifact().getFile();
-        } catch (ArtifactResolutionException e) {
-            throw new MojoExecutionException("Artifact " + artifact + " could not be resolved.", e);
-        }
-    }
-
-    private List<RemoteRepository> getRemoteRepositoriesWithUpdatePolicy(List<RemoteRepository> repositories, String updatePolicy) {
-        List<RemoteRepository> newRepositories = new ArrayList<>();
-        for (RemoteRepository repo : repositories) {
-            RemoteRepository.Builder builder = new RemoteRepository.Builder(repo);
-            RepositoryPolicy newPolicy = new RepositoryPolicy(repo.getPolicy(false).isEnabled(), updatePolicy, repo.getPolicy(false).getChecksumPolicy());
-            builder.setPolicy(newPolicy);
-            newRepositories.add(builder.build());
-        }
-        return newRepositories;
     }
 }

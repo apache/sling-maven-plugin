@@ -69,7 +69,7 @@ public final class SlingInitialContentMounter {
             final Manifest mf = getManifest(bundleFile);
             final String value = mf.getMainAttributes().getValue(HEADER_INITIAL_CONTENT);
             if ( value == null ) {
-                log.debug("Bundle has no initial content - no file system provider config created.");
+                log.warn("Bundle has no initial content - no file system provider config created.");
                 return;
             }
             header = ManifestHeader.parse(value);
@@ -81,7 +81,7 @@ public final class SlingInitialContentMounter {
             throw new MojoExecutionException("Unable to read manifest from file " + bundleFile, ioe);
         }
 
-        log.info("Trying to configure file system provider...");
+        log.info("Trying to configure file system provider for Sling initial content...");
         // quick check if resources are configured
         final List<Resource> resources = project.getResources();
         if ( resources == null || resources.size() == 0 ) {
