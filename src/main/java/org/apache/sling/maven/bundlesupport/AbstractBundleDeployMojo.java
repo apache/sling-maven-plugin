@@ -18,16 +18,17 @@
 package org.apache.sling.maven.bundlesupport;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Enumeration;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
-import java.util.jar.JarInputStream;
 import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
 import java.util.zip.Deflater;
+import java.util.zip.ZipOutputStream;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.hc.client5.http.classic.methods.HttpPost;
@@ -36,6 +37,7 @@ import org.apache.hc.client5.http.impl.classic.BasicHttpClientResponseHandler;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Parameter;
+import org.osgi.framework.Constants;
 
 @Deprecated
 abstract class AbstractBundleDeployMojo extends AbstractBundleRequestMojo {
@@ -125,57 +127,32 @@ abstract class AbstractBundleDeployMojo extends AbstractBundleRequestMojo {
         int pos = fileName.indexOf(oldVersion);
         fileName = fileName.substring(0, pos) + newVersion
             + fileName.substring(pos + oldVersion.length());
-
-        JarInputStream jis = null;
-        JarOutputStream jos;
-        OutputStream out = null;
-        JarFile sourceJar = null;
-        try {
-            // now create a temporary file and update the version
-            sourceJar = new JarFile(file);
+        final File destJar = new File(file.getParentFile(), fileName);
+        
+        // now create a temporary file and update the version
+        try (JarFile sourceJar = new JarFile(file)) {
             final Manifest manifest = sourceJar.getManifest();
-            manifest.getMainAttributes().putValue("Bundle-Version", newVersion);
-
-            jis = new JarInputStream(new FileInputStream(file));
-            final File destJar = new File(file.getParentFile(), fileName);
-            out = new FileOutputStream(destJar);
-            jos = new JarOutputStream(out, manifest);
-
-            jos.setMethod(JarOutputStream.DEFLATED);
-            jos.setLevel(Deflater.BEST_COMPRESSION);
-
-            JarEntry entryIn = jis.getNextJarEntry();
-            while (entryIn != null) {
-                JarEntry entryOut = new JarEntry(entryIn.getName());
-                entryOut.setTime(entryIn.getTime());
-                entryOut.setComment(entryIn.getComment());
-                jos.putNextEntry(entryOut);
-                if (!entryIn.isDirectory()) {
-                    IOUtils.copy(jis, jos);
+            manifest.getMainAttributes().putValue(Constants.BUNDLE_VERSION, newVersion);
+            try (OutputStream out = new FileOutputStream(destJar);
+                 JarOutputStream jos = new JarOutputStream(out, manifest)) {
+                jos.setMethod(ZipOutputStream.DEFLATED);
+                jos.setLevel(Deflater.BEST_COMPRESSION);
+                Enumeration<JarEntry> entries = sourceJar.entries();
+                while (entries.hasMoreElements()) {
+                    JarEntry entryIn = entries.nextElement();
+                    JarEntry entryOut = new JarEntry(entryIn);
+                    jos.putNextEntry(entryOut);
+                    if (!entryIn.isDirectory()) {
+                        try (InputStream jis = sourceJar.getInputStream(entryOut)) {
+                            IOUtils.copy(jis, jos);
+                        }
+                    }
                 }
-                jos.closeEntry();
-                jis.closeEntry();
-                entryIn = jis.getNextJarEntry();
+                return destJar;
             }
-
-            // close the JAR file now to force writing
-            jos.close();
-            return destJar;
         } catch (IOException ioe) {
             throw new MojoExecutionException(
                 "Unable to update version in jar file.", ioe);
-        } finally {
-            if (sourceJar != null) {
-                try {
-                    sourceJar.close();
-                }
-                catch (IOException ex) {
-                    // close
-                }
-            }
-            IOUtils.closeQuietly(jis);
-            IOUtils.closeQuietly(out);
         }
-
     }
 }
