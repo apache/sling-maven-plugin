@@ -42,7 +42,7 @@ import org.apache.maven.project.MavenProject;
 abstract class AbstractFsMountMojo extends AbstractBundleRequestMojo {
 
     /**
-     * The name of the generated JAR file.
+     * The path of the bundle file whose Sling Initial Content should be mounted.
      */
     @Parameter(property = "sling.file", defaultValue = "${project.build.directory}/${project.build.finalName}.jar", required = true)
     private String bundleFileName;
@@ -75,20 +75,22 @@ abstract class AbstractFsMountMojo extends AbstractBundleRequestMojo {
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
         if (skip) {
-            getLog().debug("Skipping fsmount/fsunmount operation as instructed.");
+            getLog().info("Skipping fsmount/fsunmount operation as instructed.");
             return;
         }
         
-        URI targetUrl = getConsoleTargetURL();
+        URI consoleTargetUrl = getConsoleTargetURL();
         try (CloseableHttpClient httpClient = getHttpClient()) {
             // ensure required bundles are installed
-            ensureBundlesInstalled(httpClient, targetUrl);
+            ensureBundlesInstalled(httpClient, consoleTargetUrl);
             
             // check for Sling-Initial-Content
             File bundleFile = new File(bundleFileName);
             if (bundleFile.exists()) {
-                configureSlingInitialContent(httpClient, targetUrl, bundleFile);
+                configureSlingInitialContent(httpClient, consoleTargetUrl, bundleFile);
                 return;
+            } else {
+                getLog().debug("Bundle file at " + bundleFileName + " does not exist");
             }
             
             // try to detect filevault layout
@@ -106,14 +108,20 @@ abstract class AbstractFsMountMojo extends AbstractBundleRequestMojo {
             else {
                 filterXmlFile = detectFilterXmlFile();
             }
-            if (jcrRootFile != null && jcrRootFile.exists() && filterXmlFile != null && filterXmlFile.exists()) {
-                configureFileVaultXml(httpClient, targetUrl, jcrRootFile, filterXmlFile);
-                return;
+            if (jcrRootFile != null && filterXmlFile != null) {
+                if (jcrRootFile.exists() && filterXmlFile.exists()) {
+                    configureFileVaultXml(httpClient, consoleTargetUrl, jcrRootFile, filterXmlFile);
+                    return;
+                } else {
+                    getLog().warn("jcr_root directory at " + jcrRootFile + " and/or filter.xml file at " + filterXmlFile + " does not exist");
+                }
+            } else {
+                getLog().warn("Could not auto-detect jcr_root directory and/or filter.xml file");
             }
         } catch (IOException e) {
             getLog().error("Could not close underlying HTTP client" + e.getMessage(),  e);
         }
-        getLog().info("No Bundle with initial content or FileVault content package found - skipping.");
+        getLog().warn("No Bundle with initial content or FileVault content package found - skipping.");
     }
 
     private File detectJcrRootFile() {
@@ -125,7 +133,10 @@ abstract class AbstractFsMountMojo extends AbstractBundleRequestMojo {
                 if (dir.exists() && dir.isDirectory() && StringUtils.equals(dir.getName(), ROOT_DIR)) {
                     return dir;
                 }
+                getLog().debug("Maven project resource directory " + dir + " does not have name " + ROOT_DIR  + " and therefore cannot be FileVault package root");
             }
+        } else {
+            getLog().debug("This Maven project does not have any resources");
         }
         return null;
     }
@@ -163,13 +174,13 @@ abstract class AbstractFsMountMojo extends AbstractBundleRequestMojo {
         return null;
     }
     
-    protected abstract void configureSlingInitialContent(CloseableHttpClient httpClient, final URI targetUrl, final File bundleFile)
+    protected abstract void configureSlingInitialContent(CloseableHttpClient httpClient, final URI consoleTargetUrl, final File bundleFile)
             throws MojoExecutionException;
 
-    protected abstract void configureFileVaultXml(CloseableHttpClient httpClient, final URI targetUrl, final File jcrRootFile, final File filterXmlFile)
+    protected abstract void configureFileVaultXml(CloseableHttpClient httpClient, final URI consoleTargetUrl, final File jcrRootFile, final File filterXmlFile)
             throws MojoExecutionException;
     
-    protected abstract void ensureBundlesInstalled(CloseableHttpClient httpClient, final URI targetUrl)
+    protected abstract void ensureBundlesInstalled(CloseableHttpClient httpClient, final URI consoleTargetUrl)
             throws MojoExecutionException;
 
 }

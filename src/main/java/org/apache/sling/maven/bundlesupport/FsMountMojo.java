@@ -34,21 +34,16 @@ import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.apache.hc.client5.http.impl.classic.BasicHttpClientResponseHandler;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.core5.http.HttpStatus;
-import org.apache.maven.artifact.Artifact;
-import org.apache.maven.artifact.repository.ArtifactRepository;
-import org.apache.maven.artifact.resolver.ArtifactResolutionRequest;
-import org.apache.maven.artifact.resolver.ArtifactResolutionResult;
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
-import org.apache.maven.repository.RepositorySystem;
 import org.apache.sling.maven.bundlesupport.BundlePrerequisite.Bundle;
 import org.apache.sling.maven.bundlesupport.deploy.BundleDeploymentMethod;
 import org.apache.sling.maven.bundlesupport.deploy.DeployContext;
 import org.apache.sling.maven.bundlesupport.fsresource.FileVaultXmlMounter;
 import org.apache.sling.maven.bundlesupport.fsresource.SlingInitialContentMounter;
+import org.eclipse.aether.artifact.DefaultArtifact;
 
 /**
  * Create OSGi configurations for the
@@ -153,13 +148,6 @@ public class FsMountMojo extends AbstractFsMountMojo {
     @Parameter(required = false)
     private List<BundlePrerequisite> deployFsResourceBundlePrerequisites;
 
-    @Component
-    private RepositorySystem repository;
-    @Parameter(property = "localRepository", required = true, readonly = true)
-    private ArtifactRepository localRepository;
-    @Parameter(property = "project.remoteArtifactRepositories", required = true, readonly = true)
-    private java.util.List<ArtifactRepository> remoteRepositories;
-    
     public void addDeployFsResourceBundlePrerequisite(BundlePrerequisite item) {
         if (this.deployFsResourceBundlePrerequisites == null) {
             this.deployFsResourceBundlePrerequisites = new ArrayList<>();
@@ -168,17 +156,17 @@ public class FsMountMojo extends AbstractFsMountMojo {
     }
 
     @Override
-    protected void configureSlingInitialContent(CloseableHttpClient httpClient, final URI targetUrl, final File bundleFile) throws MojoExecutionException {
-        new SlingInitialContentMounter(getLog(), getHttpClient(), getRequestConfigBuilder(), project).mount(targetUrl, bundleFile);
+    protected void configureSlingInitialContent(CloseableHttpClient httpClient, final URI consoleTargetUrl, final File bundleFile) throws MojoExecutionException {
+        new SlingInitialContentMounter(getLog(), getHttpClient(), getRequestConfigBuilder(), project).mount(consoleTargetUrl, bundleFile);
     }
 
     @Override
-    protected void configureFileVaultXml(CloseableHttpClient httpClient, URI targetUrl, File jcrRootFile, File filterXmlFile) throws MojoExecutionException {
-        new FileVaultXmlMounter(getLog(), httpClient, getRequestConfigBuilder(), project).mount(targetUrl, jcrRootFile, filterXmlFile);
+    protected void configureFileVaultXml(CloseableHttpClient httpClient, URI consoleTargetUrl, File jcrRootFile, File filterXmlFile) throws MojoExecutionException {
+        new FileVaultXmlMounter(getLog(), httpClient, getRequestConfigBuilder(), project).mount(consoleTargetUrl, jcrRootFile, filterXmlFile);
     }
 
     @Override
-    protected void ensureBundlesInstalled(CloseableHttpClient httpClient,URI targetUrl) throws MojoExecutionException {
+    protected void ensureBundlesInstalled(CloseableHttpClient httpClient, URI consoleTargetUrl) throws MojoExecutionException {
         if (!deployFsResourceBundle) {
             return;
         }
@@ -198,9 +186,9 @@ public class FsMountMojo extends AbstractFsMountMojo {
         }
         
         for (BundlePrerequisite bundlePrerequisite : deployFsResourceBundlePrerequisites) {
-            if (isBundlePrerequisitesPreconditionsMet(httpClient, bundlePrerequisite, targetUrl)) {
+            if (isBundlePrerequisitesPreconditionsMet(httpClient, bundlePrerequisite, consoleTargetUrl)) {
                 for (Bundle bundle : bundlePrerequisite.getBundles()) {
-                    deployBundle(httpClient, bundle, targetUrl);
+                    deployBundle(httpClient, bundle, consoleTargetUrl);
                 }
                 break;
             } else {
@@ -209,26 +197,26 @@ public class FsMountMojo extends AbstractFsMountMojo {
         }
     }
     
-    private void deployBundle(CloseableHttpClient httpClient, Bundle bundle, URI targetUrl) throws MojoExecutionException {
+    private void deployBundle(CloseableHttpClient httpClient, Bundle bundle, URI consoleTargetUrl) throws MojoExecutionException {
         try {
-            if (isBundleInstalled(httpClient, bundle, targetUrl)) {
+            if (isBundleInstalled(httpClient, bundle, consoleTargetUrl)) {
                 getLog().debug("Bundle " + bundle.getSymbolicName() + " " + bundle.getOsgiVersion() + " (or higher) already installed.");
                 return;
             }
         } catch(IOException e) {
-            throw new MojoExecutionException("Error getting installation status of " + bundle + " via " + targetUrl + ": " + e.getMessage(), e);
+            throw new MojoExecutionException("Error getting installation status of " + bundle + " via " + consoleTargetUrl + ": " + e.getMessage(), e);
         }
         try {
             getLog().info("Installing Bundle " + bundle.getSymbolicName() + " " + bundle.getOsgiVersion() + " to "
-                        + targetUrl + " via " + deploymentMethod);
+                        + consoleTargetUrl + " via " + deploymentMethod);
             
             File file = getArtifactFile(bundle, "jar");
-            deploymentMethod.execute().deploy(targetUrl, file, bundle.getSymbolicName(), new DeployContext()
+            deploymentMethod.execute().deploy(getTargetURL(), file, bundle.getSymbolicName(), new DeployContext()
                     .log(getLog())
                     .httpClient(httpClient)
                     .failOnError(failOnError));
         } catch(IOException e) {
-            throw new MojoExecutionException("Error deploying bundle " + bundle + " to " + targetUrl + ": " + e.getMessage(), e);
+            throw new MojoExecutionException("Error deploying bundle " + bundle + " to " + getTargetURL() + ": " + e.getMessage(), e);
         }
     }
     
@@ -247,8 +235,8 @@ public class FsMountMojo extends AbstractFsMountMojo {
         return true;
     }
     
-    private boolean isBundleInstalled(CloseableHttpClient httpClient, Bundle bundle, URI targetUrl) throws IOException {
-        String installedVersionString = getBundleInstalledVersion(httpClient, bundle.getSymbolicName(), targetUrl);
+    private boolean isBundleInstalled(CloseableHttpClient httpClient, Bundle bundle, URI consoleTargetUrl) throws IOException {
+        String installedVersionString = getBundleInstalledVersion(httpClient, bundle.getSymbolicName(), consoleTargetUrl);
         if (StringUtils.isBlank(installedVersionString)) {
             return false;
         }
@@ -264,8 +252,8 @@ public class FsMountMojo extends AbstractFsMountMojo {
      * @return Version number or null if non installed
      * @throws MojoExecutionException
      */
-    private String getBundleInstalledVersion(CloseableHttpClient httpClient, final String bundleSymbolicName, final URI targetUrl) throws IOException {
-        final URI getUrl = targetUrl.resolve( "/system/console/bundles/" + bundleSymbolicName + ".json");
+    private String getBundleInstalledVersion(CloseableHttpClient httpClient, final String bundleSymbolicName, final URI consoleTargetUrl) throws IOException {
+        final URI getUrl = consoleTargetUrl.resolve( "bundles/" + bundleSymbolicName + ".json");
         getLog().debug("Get bundle data via request to " + getUrl);
         final HttpGet get = new HttpGet(getUrl);
 
@@ -292,18 +280,8 @@ public class FsMountMojo extends AbstractFsMountMojo {
         return null;
     }
    
-    private File getArtifactFile(Bundle bundle, String type) throws MojoExecutionException {
-        Artifact artifactObject = repository.createArtifact(bundle.getGroupId(), bundle.getArtifactId(), bundle.getVersion(), type);
-        ArtifactResolutionRequest request = new ArtifactResolutionRequest();
-        request.setArtifact(artifactObject);
-        request.setLocalRepository(localRepository);
-        request.setRemoteRepositories(remoteRepositories);
-        ArtifactResolutionResult result = repository.resolve(request);
-        if (result.isSuccess()) {
-            return artifactObject.getFile();
-        } else {
-            throw new MojoExecutionException("Unable to download artifact: " + artifactObject.toString());
-        }
+    private File getArtifactFile(Bundle bundle, String extension) throws MojoExecutionException {
+        return resolveArtifact(new DefaultArtifact(bundle.getGroupId(), bundle.getArtifactId(), extension, bundle.getVersion()));
     }
    
 }

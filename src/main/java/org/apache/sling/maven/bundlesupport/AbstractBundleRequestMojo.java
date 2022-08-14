@@ -22,6 +22,8 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 
@@ -39,8 +41,17 @@ import org.apache.hc.core5.http.HttpRequestInterceptor;
 import org.apache.hc.core5.http.protocol.HttpContext;
 import org.apache.hc.core5.util.Timeout;
 import org.apache.maven.plugin.AbstractMojo;
+import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
+import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Parameter;
+import org.eclipse.aether.RepositorySystem;
+import org.eclipse.aether.RepositorySystemSession;
+import org.eclipse.aether.repository.RemoteRepository;
+import org.eclipse.aether.repository.RepositoryPolicy;
+import org.eclipse.aether.resolution.ArtifactRequest;
+import org.eclipse.aether.resolution.ArtifactResolutionException;
+import org.eclipse.aether.resolution.ArtifactResult;
 import org.osgi.framework.Constants;
 
 abstract class AbstractBundleRequestMojo extends AbstractMojo {
@@ -108,6 +119,15 @@ abstract class AbstractBundleRequestMojo extends AbstractMojo {
      */
     @Parameter(property = "sling.httpResponseTimeoutSec", defaultValue = "60")
     private int httpResponseTimeoutSec;
+
+    @Component
+    protected RepositorySystem repoSystem;
+
+    @Parameter(defaultValue = "${repositorySystemSession}", readonly = true, required = true)
+    protected RepositorySystemSession repoSession;
+
+    @Parameter(defaultValue = "${project.remoteProjectRepositories}", readonly = true, required = true)
+    protected List<RemoteRepository> repositories;
 
     /**
      * Returns the symbolic name of the given bundle. If the
@@ -218,6 +238,28 @@ abstract class AbstractBundleRequestMojo extends AbstractMojo {
         return RequestConfig.custom()
             .setConnectTimeout(Timeout.ofSeconds(httpConnectTimeoutSec))
             .setResponseTimeout(Timeout.ofSeconds(httpResponseTimeoutSec));
+    }
+
+    protected File resolveArtifact(org.eclipse.aether.artifact.Artifact artifact) throws MojoExecutionException {
+        ArtifactRequest req = new ArtifactRequest(artifact, getRemoteRepositoriesWithUpdatePolicy(repositories, RepositoryPolicy.UPDATE_POLICY_ALWAYS), null);
+        ArtifactResult resolutionResult;
+        try {
+            resolutionResult = repoSystem.resolveArtifact(repoSession, req);
+            return resolutionResult.getArtifact().getFile();
+        } catch (ArtifactResolutionException e) {
+            throw new MojoExecutionException("Artifact " + artifact + " could not be resolved.", e);
+        }
+    }
+
+    private List<RemoteRepository> getRemoteRepositoriesWithUpdatePolicy(List<RemoteRepository> repositories, String updatePolicy) {
+        List<RemoteRepository> newRepositories = new ArrayList<>();
+        for (RemoteRepository repo : repositories) {
+            RemoteRepository.Builder builder = new RemoteRepository.Builder(repo);
+            RepositoryPolicy newPolicy = new RepositoryPolicy(repo.getPolicy(false).isEnabled(), updatePolicy, repo.getPolicy(false).getChecksumPolicy());
+            builder.setPolicy(newPolicy);
+            newRepositories.add(builder.build());
+        }
+        return newRepositories;
     }
 
     private static final class PreemptiveBasicAuthInterceptor implements HttpRequestInterceptor {

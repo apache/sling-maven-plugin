@@ -56,7 +56,7 @@ public final class FileVaultXmlMounter {
      * @throws MojoExecutionException Exception
      */
     public void mount(final URI consoleTargetUrl, final File jcrRootFile, final File filterXmlFile) throws MojoExecutionException {
-        log.info("Trying to configure file system provider...");
+        log.info("Trying to configure file system provider for FileVault...");
 
         // create config for each path defined in filter
         final List<FsResourceConfiguration> cfgs = new ArrayList<>();
