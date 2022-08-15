@@ -61,19 +61,19 @@ public class GenerateAdapterMetadataMojo extends AbstractMojo {
 
 
     /** The directory which to check for classes with adapter metadata annotations. */
-    @Parameter(defaultValue = "${project.build.outputDirectory}")
+    @Parameter(property = "adapter.build.output.directory", defaultValue = "${project.build.outputDirectory}")
     File buildOutputDirectory;
 
     /**
-     * Name of the generated descriptor file.
+     * Name of the generated descriptor file (relative to {@link #outputDirectory}).
      */
     @Parameter(property = "adapter.descriptor.name", defaultValue = "SLING-INF/adapters.json")
     String fileName;
 
     /**
-     * The output directory in which to emit the descriptor file with name {@link GenerateAdapterMetadataMojo#fileName}.
+     * The output directory in which to emit the descriptor file with name {@link #fileName}.
      */
-    @Parameter(defaultValue = "${project.build.outputDirectory}", required = true)
+    @Parameter(property = "adapter.output.directory", defaultValue = "${project.build.outputDirectory}")
     File outputDirectory;
 
     /**

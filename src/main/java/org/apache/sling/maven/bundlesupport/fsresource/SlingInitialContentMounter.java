@@ -84,7 +84,7 @@ public final class SlingInitialContentMounter {
         log.info("Trying to configure file system provider for Sling initial content...");
         // quick check if resources are configured
         final List<Resource> resources = project.getResources();
-        if ( resources == null || resources.size() == 0 ) {
+        if (resources == null || resources.isEmpty()) {
             throw new MojoExecutionException("No resources configured for this project.");
         }
 
@@ -110,7 +110,7 @@ public final class SlingInitialContentMounter {
             File dir = null;
             final Iterator<Resource> i = resources.iterator();
             while ( dir == null && i.hasNext() ) {
-                final Resource rsrc = (Resource)i.next();
+                final Resource rsrc = i.next();
                 String child = path;
                 // if resource mapping defines a target path: remove target path from checked resource path
                 String targetPath = rsrc.getTargetPath();
@@ -180,20 +180,8 @@ public final class SlingInitialContentMounter {
      * @throws IOException Exception
      */
     private Manifest getManifest(final File bundleFile) throws IOException {
-        JarFile file = null;
-        try {
-            file = new JarFile(bundleFile);
+        try (JarFile file = new JarFile(bundleFile)){
             return file.getManifest();
-        }
-        finally {
-            if (file != null) {
-                try {
-                    file.close();
-                }
-                catch (IOException ex) {
-                    // ignore
-                }
-            }
         }
     }
 

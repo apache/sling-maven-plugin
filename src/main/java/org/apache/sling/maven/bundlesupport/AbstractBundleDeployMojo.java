@@ -39,6 +39,10 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.osgi.framework.Constants;
 
+/**
+ * Common super class of all OBR related goal classes.
+ * @deprecated Use the OBR goals from the <a href="https://felix.apache.org/documentation/_attachments/components/bundle-plugin/index.html">maven-bundle-plugin</a> instead.
+ */
 @Deprecated
 abstract class AbstractBundleDeployMojo extends AbstractBundleRequestMojo {
 

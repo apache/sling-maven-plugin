@@ -38,7 +38,7 @@ public class BundleInstallMojo extends AbstractBundleInstallMojo {
      * Whether to skip this step even though it has been configured in the
      * project to be executed.
      */
-    @Parameter(property = "sling.install.skip", defaultValue = "false", required = true)
+    @Parameter(property = "sling.install.skip", defaultValue = "false")
     private boolean skip;
 
     @Override

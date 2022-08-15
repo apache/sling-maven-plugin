@@ -64,20 +64,20 @@ public class ValidationMojo extends AbstractMojo {
     /**
      * Whether to skip the validation. 
      */
-    @Parameter(property = "sling.validation.skip", defaultValue = "false", required = true)
+    @Parameter(property = "sling.validation.skip", defaultValue = "false")
     private boolean skip;
 
     /**
      * Whether to skip the json validation.
      * At the time, there's no difference between <code>skip</code> and <code>skipJson</code> because only JSON files will be validated by now.
      */
-    @Parameter(property = "sling.validation.skipJson", defaultValue = "false", required = true)
+    @Parameter(property = "sling.validation.skipJson", defaultValue = "false")
     private boolean skipJson;
 
     /**
      * Whether to accept quote ticks in JSON files or not. 
      */
-    @Parameter(property = "sling.validation.jsonQuoteTick", defaultValue = "false", required = false)
+    @Parameter(property = "sling.validation.jsonQuoteTick", defaultValue = "false")
     private boolean jsonQuoteTick;
 
     @Component

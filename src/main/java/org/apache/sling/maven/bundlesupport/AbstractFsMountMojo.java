@@ -44,7 +44,7 @@ abstract class AbstractFsMountMojo extends AbstractBundleRequestMojo {
     /**
      * The path of the bundle file whose Sling Initial Content should be mounted.
      */
-    @Parameter(property = "sling.file", defaultValue = "${project.build.directory}/${project.build.finalName}.jar", required = true)
+    @Parameter(property = "sling.file", defaultValue = "${project.build.directory}/${project.build.finalName}.jar")
     private String bundleFileName;
 
     /**
@@ -63,13 +63,13 @@ abstract class AbstractFsMountMojo extends AbstractBundleRequestMojo {
     /**
      * If set to <code>true</code> Sling File System Resource mount/unmount commands are ignored.
      */
-    @Parameter(property = "sling.fsmount.skip", defaultValue = "false", required = true)
+    @Parameter(property = "sling.fsmount.skip", defaultValue = "false")
     private boolean skip;
     
     /**
      * The Maven project.
      */
-    @Parameter(defaultValue = "${project}", required = true, readonly = true)
+    @Parameter(defaultValue = "${project}", readonly = true)
     protected MavenProject project;
 
     @Override

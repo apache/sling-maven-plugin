@@ -87,20 +87,20 @@ abstract class AbstractBundleRequestMojo extends AbstractMojo {
     /**
      * The user name to authenticate at the running Sling instance.
      */
-    @Parameter(property="sling.user", defaultValue = "admin", required = true)
+    @Parameter(property="sling.user", defaultValue = "admin")
     private String user;
 
     /**
      * The password to authenticate at the running Sling instance.
      */
-    @Parameter(property="sling.password", defaultValue = "admin", required = true)
+    @Parameter(property="sling.password", defaultValue = "admin")
     private String password;
     
     /**
      * Determines whether or not to fail the build if
      * the HTTP POST or PUT returns an non-OK response code.
      */
-    @Parameter(property = "sling.failOnError", defaultValue = "true", required = true)
+    @Parameter(property = "sling.failOnError", defaultValue = "true")
     protected boolean failOnError;
 
     /**

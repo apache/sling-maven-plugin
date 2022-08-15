@@ -39,6 +39,7 @@ abstract class AbstractBundleInstallMojo extends AbstractBundleRequestMojo {
      * 
      * @deprecated Use {@link #deploymentMethod} instead.
      */
+    @Deprecated
     @Parameter(property="sling.usePut", defaultValue = "false")
     protected boolean usePut;
 
@@ -59,13 +60,13 @@ abstract class AbstractBundleInstallMojo extends AbstractBundleRequestMojo {
      * This has precedence over the deprecated parameter {@link #usePut}.
      * If nothing is set the default is either {@code WebConsole} or {@code WebDAV} (when {@link #usePut} is {@code true}).
      */
-    @Parameter(property="sling.deploy.method", required = false)
+    @Parameter(property="sling.deploy.method")
     protected BundleDeploymentMethod deploymentMethod;
 
     /**
      * The content type / mime type used for WebDAV or Sling POST deployment.
      */
-    @Parameter(property="sling.mimeType", defaultValue = "application/java-archive", required = true)
+    @Parameter(property="sling.mimeType", defaultValue = "application/java-archive")
     protected String mimeType;
 
     /**
@@ -73,21 +74,21 @@ abstract class AbstractBundleInstallMojo extends AbstractBundleRequestMojo {
      * updated this parameter is ignored. The parameter is also ignored if the running Sling instance has no 
      * StartLevel service (which is unusual actually). Only applies when POSTing to Felix Web Console.
      */
-    @Parameter(property="sling.bundle.startlevel", defaultValue = "20", required = true)
+    @Parameter(property="sling.bundle.startlevel", defaultValue = "20")
     private String bundleStartLevel;
 
     /**
      * Whether to start the uploaded bundle or not. Only applies when POSTing
      * to Felix Web Console
      */
-    @Parameter(property="sling.bundle.start", defaultValue = "true", required = true)
+    @Parameter(property="sling.bundle.start", defaultValue = "true")
     private boolean bundleStart;
 
     /**
      * Whether to refresh the packages after installing the uploaded bundle.
      * Only applies when POSTing to Felix Web Console
      */
-    @Parameter(property="sling.refreshPackages", defaultValue = "true", required = true)
+    @Parameter(property="sling.refreshPackages", defaultValue = "true")
     private boolean refreshPackages;
 
     /**
@@ -96,7 +97,7 @@ abstract class AbstractBundleInstallMojo extends AbstractBundleRequestMojo {
      * for the <a href="https://sling.apache.org/documentation/bundles/content-loading-jcr-contentloader.html#initial-content-loading">bundle's initial content</a>.
      * This parameter must not be {@code true} with bundles resolved from the Maven repository.
      */
-    @Parameter(property="sling.mountByFS", defaultValue = "false", required = true)
+    @Parameter(property="sling.mountByFS", defaultValue = "false")
     boolean mountByFS;
 
     /**

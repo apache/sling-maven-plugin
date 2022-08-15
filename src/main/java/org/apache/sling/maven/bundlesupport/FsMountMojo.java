@@ -48,8 +48,8 @@ import org.eclipse.aether.artifact.DefaultArtifact;
 /**
  * Create OSGi configurations for the
  * <a href="https://sling.apache.org/documentation/bundles/accessing-filesystem-resources-extensions-fsresource.html">Apache Sling File System Resource Provider</a>.
- * In case a bundle file is provided via {@link AbstractFsMountMojo#bundleFileName} the configuration for its <a href="https://sling.apache.org/documentation/bundles/content-loading-jcr-contentloader.html#initial-content-loading">initial content</a> is created.
- * Otherwise it tries to detect a FileVault XML layout within {@link AbstractFsMountMojo#fileVaultJcrRootFile} or the project's base directory and potentially creates a configuration for each path in the package's {@code filter.xml}. 
+ * In case a bundle file is supplied via {@link AbstractFsMountMojo#bundleFileName} the configuration for its <a href="https://sling.apache.org/documentation/bundles/content-loading-jcr-contentloader.html#initial-content-loading">initial content</a> is created.
+ * Otherwise it tries to detect a FileVault content package layout starting at {@link AbstractFsMountMojo#fileVaultJcrRootFile} or the project's resource directories and potentially creates a configuration for each path in the package's {@code filter.xml}. 
  * @since 2.2.0
  */
 @Mojo(name = "fsmount", requiresProject = true)
