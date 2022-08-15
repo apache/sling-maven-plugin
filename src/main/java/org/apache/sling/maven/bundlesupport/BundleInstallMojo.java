@@ -52,7 +52,7 @@ public class BundleInstallMojo extends AbstractBundleInstallMojo {
     }
 
     @Override
-    protected File getBundleFileName() {
+    protected File getBundleFileName() throws MojoExecutionException {
         File file = project.getArtifact().getFile();
         if (isBundleFile(file)) {
             return file;
@@ -65,7 +65,7 @@ public class BundleInstallMojo extends AbstractBundleInstallMojo {
                 getLog().debug("No bundle found in secondary artifact " + file);
             }
         }
-        return null;
+        throw new MojoExecutionException("No attached bundle found for this Maven project, for standalone usage use goal 'install-file' instead!");
     }
 
     private boolean isBundleFile(File file) {
