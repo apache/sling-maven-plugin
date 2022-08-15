@@ -23,7 +23,8 @@ Since version 2.1.8 you can also leverage the [Sling POST servlet](https://sling
 
 ### Felix Web Console
 
-The plugin by default places an *HTTP POST* request to the [Felix Web Console](https://felix.apache.org/documentation/subprojects/apache-felix-web-console/web-console-restful-api.html#post-requests). This will achieve both uninstallation of the bundle in one request *synchronously*.
+Places an *HTTP POST* request to the [Felix Web Console](https://felix.apache.org/documentation/subprojects/apache-felix-web-console/web-console-restful-api.html#post-requests). This will achieve 
+uninstallation of the bundle *synchronously*.
 
 ### WebDAV PUT
 

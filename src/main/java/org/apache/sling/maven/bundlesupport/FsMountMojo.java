@@ -80,13 +80,12 @@ public class FsMountMojo extends AbstractFsMountMojo {
      *  Make sure that {@link #slingUrl} points to the Felix Web Console in that case.</li>
      *  <li><strong>WebDAV</strong>, uses <a href="https://sling.apache.org/documentation/development/repository-based-development.html">
      *  WebDAV</a> for deployment (HTTP PUT). Make sure that {@link #slingUrl} points to the entry path of 
-     *  the Sling WebDAV bundle (usually below regular Sling root URL). Issues a HTTP Delete for the uninstall goal.
+     *  the Sling WebDAV bundle (defaults to {@code /dav/default} in the Sling starter). Issues a HTTP Delete for the uninstall goal.</li>
      *  <li><strong>SlingPostServlet</strong>, uses the
      *  <a href="https://sling.apache.org/documentation/bundles/manipulating-content-the-slingpostservlet-servlets-post.html">Sling Post Servlet</a> for deployment (HTTP POST).
      *  Make sure that {@link #slingUrl} points a path which is handled by the Sling POST Servlet (usually below regular Sling root URL).</li>
      * </ol>
-     * 
-     * This has precedence over the deprecated parameter {@link #usePut}.
+     * For more details refer to <a href="bundle-installation.html">Bundle Installation</a>.
      * @since 2.3.0
      */
     @Parameter(property="sling.deploy.method", required = false, defaultValue = "WebConsole")

@@ -284,7 +284,7 @@
             <version>${mavenVersion}</version>
             <scope>provided</scope>
         </dependency>
-        <!-- use for evaluating Adapter annotations -->
+        <!-- used for evaluating Adapter annotations -->
         <dependency>
             <groupId>io.github.classgraph</groupId>
             <artifactId>classgraph</artifactId>
@@ -332,7 +332,6 @@
                         </plugin>
                     </plugins>
                 </pluginManagement>
-                
             </build>
         </profile>
         <!-- This plugin's configuration is used to store Eclipse m2e settings only. It has no influence on the Maven build itself. -->

@@ -56,6 +56,7 @@ abstract class AbstractBundleInstallMojo extends AbstractBundleRequestMojo {
      *  <a href="https://sling.apache.org/documentation/bundles/manipulating-content-the-slingpostservlet-servlets-post.html">Sling Post Servlet</a> for deployment (HTTP POST).
      *  Make sure that {@link #slingUrl} points a path which is handled by the Sling POST Servlet (usually below regular Sling root URL).</li>
      * </ol>
+     * For more details refer to <a href="bundle-installation.html">Bundle Installation</a>.
      * 
      * This has precedence over the deprecated parameter {@link #usePut}.
      * If nothing is set the default is either {@code WebConsole} or {@code WebDAV} (when {@link #usePut} is {@code true}).
