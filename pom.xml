@@ -28,7 +28,7 @@
     </parent>
 
     <artifactId>sling-maven-plugin</artifactId>
-    <version>3.0.0</version>
+    <version>3.0.1-SNAPSHOT</version>
     <packaging>maven-plugin</packaging>
 
     <name>Apache Sling Maven Plugin</name>
@@ -45,7 +45,7 @@
         <connection>scm:git:https://gitbox.apache.org/repos/asf/sling-maven-plugin.git</connection>
         <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/sling-maven-plugin.git</developerConnection>
         <url>https://github.com/apache/sling-maven-plugin</url>
-        <tag>sling-maven-plugin-3.0.0</tag>
+        <tag>HEAD</tag>
     </scm>
 
     <properties>
@@ -55,7 +55,7 @@
         <mavenVersion>3.3.1</mavenVersion><!-- minimum target Maven version this plugin is compatible with -->
         <maven.compiler.target>${sling.java.version}</maven.compiler.target><!-- also set target next to release due to https://issues.apache.org/jira/browse/MPLUGIN-404 -->
         <starter-its.startTimeoutSeconds>60</starter-its.startTimeoutSeconds><!-- the time in seconds to wait for Sling Starter Feature to be started for the ITs -->
-        <project.build.outputTimestamp>1660546094</project.build.outputTimestamp>
+        <project.build.outputTimestamp>1660546123</project.build.outputTimestamp>
     </properties>
 
     <build>
