@@ -24,6 +24,7 @@ import static org.junit.Assert.assertTrue;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -49,11 +50,11 @@ public class GenerateAdapterMetadataMojoTest {
 
     static final Path RELATIVE_ANNOTATIONTEST_PACKAGE_PATH = Paths.get("org", "apache", "sling", "maven", "bundlesupport", "annotationtest");
     @Test
-    public void testExecute() throws MojoExecutionException, MojoFailureException, IOException {
+    public void testExecute() throws MojoExecutionException, MojoFailureException, IOException, URISyntaxException {
         GenerateAdapterMetadataMojo mojo = new GenerateAdapterMetadataMojo();
         // copy classes in package "annotationtest" to classpath?
         File classpathFolder = tmpDirectory.newFolder("test-classpath");
-        Path testClasspath = Paths.get(GenerateAdapterMetadataMojoTest.class.getProtectionDomain().getCodeSource().getLocation().getPath());
+        Path testClasspath = Paths.get(GenerateAdapterMetadataMojoTest.class.getProtectionDomain().getCodeSource().getLocation().toURI());
         // only support directory right now
         if (!Files.isDirectory(testClasspath)) {
             throw new IllegalStateException("Only supposed to be called from a directory, not a jar file");
@@ -74,7 +75,7 @@ public class GenerateAdapterMetadataMojoTest {
         expectedJsonObjectBuilder.add("java.lang.Long", Json.createObjectBuilder().add("first condition", Adapter2.class.getName()));
         expectedJsonObjectBuilder.add("java.lang.String", Json.createObjectBuilder().add("If the adaptable is a Adapter1.", Json.createArrayBuilder().add(Adapter1.class.getName()).add(Adapter2.class.getName())));
         expectedJsonObjectBuilder.add("java.lang.Integer", Json.createObjectBuilder().add("If the adaptable is a Adapter1.", Adapter1.class.getName()));
-        
+
         try (InputStream input = Files.newInputStream(outputFile);
              JsonReader jsonReader = Json.createReader(input)) {
             assertEquals(expectedJsonObjectBuilder.build(), jsonReader.readObject());
