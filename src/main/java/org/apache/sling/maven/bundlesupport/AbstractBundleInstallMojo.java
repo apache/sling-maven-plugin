@@ -24,6 +24,7 @@ import java.net.URI;
 
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.apache.sling.maven.bundlesupport.deploy.BundleDeploymentMethod;
@@ -121,14 +122,12 @@ abstract class AbstractBundleInstallMojo extends AbstractBundleRequestMojo {
 
         // only upload if packaging as an osgi-bundle
         if (!bundleFile.exists()) {
-            getLog().info(bundleFile + " does not exist, not uploading");
-            return;
+            throw new MojoExecutionException("The given bundle file " + bundleFile + " does not exist!");
         }
 
         String bundleName = getBundleSymbolicName(bundleFile);
         if (bundleName == null) {
-            getLog().info(bundleFile + " is not an OSGi Bundle, not uploading");
-            return;
+            throw new MojoExecutionException("The given file " + bundleFile + " is no OSGi bundle");
         }
 
         URI targetURL = getTargetURL();

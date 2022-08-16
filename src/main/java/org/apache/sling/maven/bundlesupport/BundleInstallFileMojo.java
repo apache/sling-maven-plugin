@@ -29,9 +29,9 @@ import org.eclipse.aether.artifact.DefaultArtifact;
  * Install an OSGi bundle from a given file path or Maven coordinates (resolved from the repository) to a running Sling instance.
  * One of the following parameter sets must be set to determine the bundle to install:
  * <ul>
- * <li>{@link #bundleFileName}</li>
  * <li>{@link #groupId}, {@link #artifactId}, {@link #version}, {@link #packaging} and optionally {@link #classifier}</li>
  * <li>{@link #artifact}</li>
+ * <li>{@link #bundleFileName}</li>
  * </ul>
  * 
  * To install a bundle which has been built from the current Maven project rather use goal <a href="install-mojo.html">install</a>.
@@ -42,24 +42,25 @@ public class BundleInstallFileMojo extends AbstractBundleInstallMojo {
 
     /**
      * The path of the bundle file to install.
+     * Is only effective if artifact is not determined via some other way (Maven coordinates).
      */
-    @Parameter(property="sling.file")
+    @Parameter(property="sling.file", defaultValue = "${project.build.directory}/${project.build.finalName}.jar")
     private File bundleFileName;
 
     /**
-     * The groupId of the artifact to install
+     * The groupId of the artifact to install. Takes precedence over {@link #artifact} and {@link #bundleFileName}.
      */
     @Parameter(property="sling.groupId")
     private String groupId;
 
     /**
-     * The artifactId of the artifact to install
+     * The artifactId of the artifact to install. Takes precedence over {@link #artifact} and {@link #bundleFileName}.
      */
     @Parameter(property="sling.artifactId")
     private String artifactId;
 
     /**
-     * The version of the artifact to install
+     * The version of the artifact to install. Takes precedence over {@link #artifact} and {@link #bundleFileName}.
      */
     @Parameter(property="sling.version")
     private String version;
@@ -78,22 +79,24 @@ public class BundleInstallFileMojo extends AbstractBundleInstallMojo {
 
     /**
      * A string of the form {@code groupId:artifactId:version[:packaging[:classifier]]}.
+     * Takes precedence over {@link #bundleFileName}.
      */
     @Parameter(property="sling.artifact")
     private String artifact;
 
     @Override
     protected File getBundleFileName() throws MojoExecutionException {
-        File fileName = bundleFileName;
+        File fileName = resolveBundleFileFromArtifact();
         if (fileName == null) {
-            fileName = resolveBundleFileFromArtifact();
-            if (fileName == null) {
-                throw new MojoExecutionException("Must provide either sling.file or sling.artifact parameters");
-            }
+            fileName = bundleFileName;
+        } else {
             if (mountByFS) {
                 getLog().warn("The parameter 'mountByFS' is only supported with files outside the Maven repository and therefore ignored in this context!");
                 mountByFS = false;
             }
+        }
+        if (fileName == null) {
+            throw new MojoExecutionException("Must provide either sling.file, sling.artifact or sling.groupId/sling.artifactId/sling.version parameters");
         }
 
         return fileName;

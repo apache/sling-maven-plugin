@@ -65,8 +65,8 @@
                         </goals>
                         <phase>install</phase>
                         <configuration>
-                            <artifactId>org.apache.sling.commons.messaging</artifactId>
                             <groupId>org.apache.sling</groupId>
+                            <artifactId>org.apache.sling.commons.messaging</artifactId>
                             <version>1.0.2</version>
                         </configuration>
                     </execution>
