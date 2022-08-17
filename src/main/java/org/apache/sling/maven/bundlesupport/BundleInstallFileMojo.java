@@ -27,9 +27,9 @@ import org.eclipse.aether.artifact.DefaultArtifact;
 
 /**
  * Install an OSGi bundle from a given file path or Maven coordinates (resolved from the repository) to a running Sling instance.
- * One of the following parameter sets must be set to determine the bundle to install:
+ * One of the following parameter sets are used to determine the bundle to install (evaluated in the given order):
  * <ul>
- * <li>{@link #groupId}, {@link #artifactId}, {@link #version}, {@link #packaging} and optionally {@link #classifier}</li>
+ * <li>{@link #groupId}, {@link #artifactId}, {@link #version}, and optionally {@link #classifier} and {@link #packaging}</li>
  * <li>{@link #artifact}</li>
  * <li>{@link #bundleFileName}</li>
  * </ul>
