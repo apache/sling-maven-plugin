@@ -24,7 +24,6 @@ import java.net.URI;
 
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.apache.sling.maven.bundlesupport.deploy.BundleDeploymentMethod;
