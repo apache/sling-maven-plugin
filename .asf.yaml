@@ -1,12 +1,21 @@
-# https://cwiki.apache.org/confluence/display/INFRA/git+-+.asf.yaml+features#Git.asf.yamlfeatures-GitHubsettings
 github:
   description: "Apache Sling Maven Plugin"
-  homepage: https://sling.apache.org/components/sling-maven-plugin/
+  homepage: "https://sling.apache.org/components/sling-maven-plugin/"
   labels:
-    - maven
-    - bundle
-    - osgi
-    - sling
-    - deploy
-    - webconsole
-    - maven-plugin
+  - "maven"
+  - "bundle"
+  - "osgi"
+  - "sling"
+  - "deploy"
+  - "webconsole"
+  - "maven-plugin"
+  autolink_jira:
+  - "SLING"
+  - "OAK"
+  - "JCR"
+  - "JCRVLT"
+  - "INFRA"
+  - "FELIX"
+  - "MNG"
+notifications:
+  jira_options: "link"
