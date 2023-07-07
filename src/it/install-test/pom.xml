@@ -29,6 +29,7 @@
     <properties>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
+        <wait.time.ms>1500</wait.time.ms>
     </properties>
     <build>
         <pluginManagement>
@@ -76,13 +77,32 @@
                         <goals>
                             <goal>install</goal>
                         </goals>
+                        <phase>pre-integration-test</phase>
                     </execution>
                     <execution>
                         <id>bundle-uninstall</id>
                         <goals>
                             <goal>uninstall</goal>
                         </goals>
-                        <phase>install</phase>
+                        <phase>post-integration-test</phase>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <configuration>
+                    <target>
+                        <sleep milliseconds="${wait.time.ms}" />
+                    </target>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>sleep-for-a-while</id>
+                        <phase>integration-test</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
                     </execution>
                 </executions>
             </plugin>

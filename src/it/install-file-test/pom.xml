@@ -30,6 +30,7 @@
     <properties>
         <!-- this is either file name or BSN, for BSN overwrite via CLI params -->
         <sling.bundle.name>org.apache.sling.commons.messaging-1.0.2.jar</sling.bundle.name>
+        <wait.time.ms>1500</wait.time.ms>
     </properties>
     <build>
         <pluginManagement>
@@ -50,6 +51,10 @@
                     <artifactId>maven-install-plugin</artifactId>
                     <version>3.0.1</version>
                 </plugin>
+                <plugin>
+                    <artifactId>maven-antrun-plugin</artifactId>
+                    <version>3.1.0</version>
+                </plugin>
             </plugins>
         </pluginManagement>
         <plugins>
@@ -63,7 +68,7 @@
                         <goals>
                             <goal>install-file</goal>
                         </goals>
-                        <phase>install</phase>
+                        <phase>pre-integration-test</phase>
                         <configuration>
                             <groupId>org.apache.sling</groupId>
                             <artifactId>org.apache.sling.commons.messaging</artifactId>
@@ -75,7 +80,25 @@
                         <goals>
                             <goal>uninstall</goal>
                         </goals>
-                        <phase>install</phase>
+                        <phase>post-integration-test</phase>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <configuration>
+                    <target>
+                        <sleep milliseconds="${wait.time.ms}" />
+                    </target>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>sleep-for-a-while</id>
+                        <phase>integration-test</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
                     </execution>
                 </executions>
             </plugin>

@@ -8,7 +8,7 @@ There are three different installation approaches supported by the plugin which 
 
 ### Felix Web Console
 
-The plugin by default places an *HTTP POST* request to the [Felix Web Console](https://felix.apache.org/documentation/subprojects/apache-felix-web-console/web-console-restful-api.html#post-requests). This will achieve both upload and installation of the bundle in one request *synchronously*.
+The plugin by default places an *HTTP POST* request to the [Felix Web Console](https://felix.apache.org/documentation/subprojects/apache-felix-web-console/web-console-restful-api.html#post-requests). This will achieve both upload and installation/update of the bundle triggered by one request. The installation/update of the bundle happens *asynchronously*, though, in the Felix Web Console.
 
 ### WebDAV PUT
 
