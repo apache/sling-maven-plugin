@@ -28,7 +28,7 @@ import org.apache.sling.maven.bundlesupport.deploy.method.WebDavPutDeployMethod;
  * Use camel-case values because those are used when you configure the plugin (and uppercase with separators "_" just looks ugly in that context)
  */
 public enum BundleDeploymentMethod {
-    
+
     /**
      * Via POST to Felix Web Console
      */
@@ -43,16 +43,14 @@ public enum BundleDeploymentMethod {
      * Via POST to Sling directly
      */
     SlingPostServlet(new SlingPostDeployMethod());
-    
-    
+
     private final DeployMethod deployMethod;
 
     private BundleDeploymentMethod(DeployMethod deployMethod) {
         this.deployMethod = deployMethod;
     }
-    
+
     public DeployMethod execute() {
         return deployMethod;
     }
-
 }

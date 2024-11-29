@@ -37,15 +37,16 @@ class FsResourceConfiguration {
     public FsMode getFsMode() {
         return fsMode;
     }
+
     public FsResourceConfiguration fsMode(FsMode value) {
         this.fsMode = value;
         return this;
     }
+
     public FsResourceConfiguration fsMode(String value) {
         if (StringUtils.isBlank(value)) {
             this.fsMode = null;
-        }
-        else {
+        } else {
             this.fsMode = FsMode.valueOf(StringUtils.upperCase(value));
         }
         return this;
@@ -54,6 +55,7 @@ class FsResourceConfiguration {
     public String getResourceRootPath() {
         return resourceRootPath;
     }
+
     public FsResourceConfiguration resourceRootPath(String value) {
         this.resourceRootPath = value;
         return this;
@@ -62,6 +64,7 @@ class FsResourceConfiguration {
     public File getFsRootPath() {
         return fsRootPath;
     }
+
     public FsResourceConfiguration fsRootPath(File value) {
         if (!value.isAbsolute()) {
             throw new IllegalArgumentException("The given filesystem path must be absolute");
@@ -102,5 +105,4 @@ class FsResourceConfiguration {
     public String toString() {
         return ToStringBuilder.reflectionToString(this, ToStringStyle.NO_CLASS_NAME_STYLE);
     }
-
 }

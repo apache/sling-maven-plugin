@@ -42,7 +42,9 @@ public class WebDavPutDeployMethod implements DeployMethod {
             performPut(targetURL, file, context);
         } catch (HttpResponseException e) {
             if (e.getStatusCode() == HttpStatus.SC_CONFLICT) {
-                context.getLog().debug("Bundle not installed due missing parent folders. Attempting to create parent structure.");
+                context.getLog()
+                        .debug(
+                                "Bundle not installed due missing parent folders. Attempting to create parent structure.");
                 createIntermediaryPaths(targetURL, context);
 
                 context.getLog().debug("Re-attempting bundle install after creating parent folders.");
@@ -57,7 +59,8 @@ public class WebDavPutDeployMethod implements DeployMethod {
         // sanity check on response
         // must answer 204 (no content)
         // https://github.com/apache/jackrabbit/blob/88490006e6bdba0b0ad52d209b1bfa040477c2ec/jackrabbit-webdav/src/main/java/org/apache/jackrabbit/webdav/server/AbstractWebdavServlet.java#L763
-        Integer status = context.getHttpClient().execute(delete, new ResponseCodeEnforcingResponseHandler(HttpStatus.SC_NO_CONTENT));
+        Integer status = context.getHttpClient()
+                .execute(delete, new ResponseCodeEnforcingResponseHandler(HttpStatus.SC_NO_CONTENT));
         context.getLog().debug("Received status code " + status);
     }
 
@@ -65,9 +68,13 @@ public class WebDavPutDeployMethod implements DeployMethod {
         HttpPut filePut = new HttpPut(SlingPostDeployMethod.getURLWithFilename(targetURL, file.getName()));
         filePut.setEntity(new FileEntity(file, ContentType.create(context.getMimeType())));
         // sanity check on response (has really the right servlet answered?)
-        // check status code, must be either 201 (created) for new resources or 204 (no content) for updated existing resources
+        // check status code, must be either 201 (created) for new resources or 204 (no content) for updated existing
+        // resources
         // https://github.com/apache/jackrabbit/blob/88490006e6bdba0b0ad52d209b1bfa040477c2ec/jackrabbit-webdav/src/main/java/org/apache/jackrabbit/webdav/server/AbstractWebdavServlet.java#L707
-        Integer status = context.getHttpClient().execute(filePut, new ResponseCodeEnforcingResponseHandler(HttpStatus.SC_NO_CONTENT, HttpStatus.SC_CREATED));
+        Integer status = context.getHttpClient()
+                .execute(
+                        filePut,
+                        new ResponseCodeEnforcingResponseHandler(HttpStatus.SC_NO_CONTENT, HttpStatus.SC_CREATED));
         context.getLog().debug("Received status code " + status);
     }
 
@@ -83,7 +90,7 @@ public class WebDavPutDeployMethod implements DeployMethod {
         context.getLog().info("Received response: " + response);
         // must be 201 (created)
         // https://github.com/apache/jackrabbit/blob/88490006e6bdba0b0ad52d209b1bfa040477c2ec/jackrabbit-webdav/src/main/java/org/apache/jackrabbit/webdav/server/AbstractWebdavServlet.java#L746
-        
+
     }
 
     private void createIntermediaryPaths(URI targetURL, DeployContext context) throws IOException {
@@ -111,16 +118,15 @@ public class WebDavPutDeployMethod implements DeployMethod {
                         throw e;
                     }
                 }
-            }
-            catch (IOException e) {
-                throw new IOException("Failed getting intermediate path at " + intermediateUri + "."
-                        + " Reason: " + e.getMessage(), e);
+            } catch (IOException e) {
+                throw new IOException(
+                        "Failed getting intermediate path at " + intermediateUri + "." + " Reason: " + e.getMessage(),
+                        e);
             }
         }
 
         if (existingIntermediateUri == null) {
-            throw new IOException(
-                    "Could not find any intermediate path up until the root of " + targetURL + ".");
+            throw new IOException("Could not find any intermediate path up until the root of " + targetURL + ".");
         }
 
         // 2. now create from that level on each intermediate node individually towards the target path
@@ -137,10 +143,9 @@ public class WebDavPutDeployMethod implements DeployMethod {
                 performMkCol(intermediateUri, context);
                 context.getLog().debug("Intermediate path at " + intermediateUri + " successfully created");
             } catch (IOException e) {
-                throw new IOException("Failed creating intermediate path at '" + intermediateUri + "'."
-                        + " Reason: " + e.getMessage());
+                throw new IOException("Failed creating intermediate path at '" + intermediateUri + "'." + " Reason: "
+                        + e.getMessage());
             }
         }
     }
-
 }

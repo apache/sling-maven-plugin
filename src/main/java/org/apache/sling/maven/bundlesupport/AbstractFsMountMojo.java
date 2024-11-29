@@ -1,27 +1,22 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
-
 package org.apache.sling.maven.bundlesupport;
-
-import static org.apache.jackrabbit.vault.util.Constants.FILTER_XML;
-import static org.apache.jackrabbit.vault.util.Constants.META_DIR;
-import static org.apache.jackrabbit.vault.util.Constants.META_INF;
-import static org.apache.jackrabbit.vault.util.Constants.ROOT_DIR;
-import static org.apache.jackrabbit.vault.util.Constants.VAULT_DIR;
 
 import java.io.File;
 import java.io.IOException;
@@ -35,6 +30,12 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
+
+import static org.apache.jackrabbit.vault.util.Constants.FILTER_XML;
+import static org.apache.jackrabbit.vault.util.Constants.META_DIR;
+import static org.apache.jackrabbit.vault.util.Constants.META_INF;
+import static org.apache.jackrabbit.vault.util.Constants.ROOT_DIR;
+import static org.apache.jackrabbit.vault.util.Constants.VAULT_DIR;
 
 /**
  * Manages OSGi configurations for File System Resource provider.
@@ -65,7 +66,7 @@ abstract class AbstractFsMountMojo extends AbstractBundleRequestMojo {
      */
     @Parameter(property = "sling.fsmount.skip", defaultValue = "false")
     private boolean skip;
-    
+
     /**
      * The Maven project.
      */
@@ -78,12 +79,12 @@ abstract class AbstractFsMountMojo extends AbstractBundleRequestMojo {
             getLog().info("Skipping fsmount/fsunmount operation as instructed.");
             return;
         }
-        
+
         URI consoleTargetUrl = getConsoleTargetURL();
         try (CloseableHttpClient httpClient = getHttpClient()) {
             // ensure required bundles are installed
             ensureBundlesInstalled(httpClient, consoleTargetUrl);
-            
+
             // check for Sling-Initial-Content
             File bundleFile = new File(bundleFileName);
             if (bundleFile.exists()) {
@@ -92,20 +93,18 @@ abstract class AbstractFsMountMojo extends AbstractBundleRequestMojo {
             } else {
                 getLog().debug("Bundle file at " + bundleFileName + " does not exist");
             }
-            
+
             // try to detect filevault layout
             File jcrRootFile;
             File filterXmlFile;
             if (fileVaultJcrRootFile != null) {
                 jcrRootFile = fileVaultJcrRootFile;
-            }
-            else {
+            } else {
                 jcrRootFile = detectJcrRootFile();
             }
             if (fileVaultFilterXmlFile != null) {
                 filterXmlFile = fileVaultFilterXmlFile;
-            }
-            else {
+            } else {
                 filterXmlFile = detectFilterXmlFile();
             }
             if (jcrRootFile != null && filterXmlFile != null) {
@@ -113,13 +112,14 @@ abstract class AbstractFsMountMojo extends AbstractBundleRequestMojo {
                     configureFileVaultXml(httpClient, consoleTargetUrl, jcrRootFile, filterXmlFile);
                     return;
                 } else {
-                    getLog().warn("jcr_root directory at " + jcrRootFile + " and/or filter.xml file at " + filterXmlFile + " does not exist");
+                    getLog().warn("jcr_root directory at " + jcrRootFile + " and/or filter.xml file at " + filterXmlFile
+                            + " does not exist");
                 }
             } else {
                 getLog().warn("Could not auto-detect jcr_root directory and/or filter.xml file");
             }
         } catch (IOException e) {
-            getLog().error("Could not close underlying HTTP client" + e.getMessage(),  e);
+            getLog().error("Could not close underlying HTTP client" + e.getMessage(), e);
         }
         getLog().warn("No Bundle with initial content or FileVault content package found - skipping.");
     }
@@ -133,7 +133,8 @@ abstract class AbstractFsMountMojo extends AbstractBundleRequestMojo {
                 if (dir.exists() && dir.isDirectory() && StringUtils.equals(dir.getName(), ROOT_DIR)) {
                     return dir;
                 }
-                getLog().debug("Maven project resource directory " + dir + " does not have name " + ROOT_DIR  + " and therefore cannot be FileVault package root");
+                getLog().debug("Maven project resource directory " + dir + " does not have name " + ROOT_DIR
+                        + " and therefore cannot be FileVault package root");
             }
         } else {
             getLog().debug("This Maven project does not have any resources");
@@ -146,7 +147,7 @@ abstract class AbstractFsMountMojo extends AbstractBundleRequestMojo {
         if (resources != null) {
             for (Resource resource : resources) {
                 File dir = new File(resource.getDirectory());
-                if (dir.exists() && dir.isDirectory() ) {
+                if (dir.exists() && dir.isDirectory()) {
                     // look for META-INF -> vault/filter.xml
                     if (StringUtils.equals(dir.getName(), META_INF)) {
                         File filterXml = new File(dir, VAULT_DIR + "/" + FILTER_XML);
@@ -173,14 +174,18 @@ abstract class AbstractFsMountMojo extends AbstractBundleRequestMojo {
         }
         return null;
     }
-    
-    protected abstract void configureSlingInitialContent(CloseableHttpClient httpClient, final URI consoleTargetUrl, final File bundleFile)
+
+    protected abstract void configureSlingInitialContent(
+            CloseableHttpClient httpClient, final URI consoleTargetUrl, final File bundleFile)
             throws MojoExecutionException;
 
-    protected abstract void configureFileVaultXml(CloseableHttpClient httpClient, final URI consoleTargetUrl, final File jcrRootFile, final File filterXmlFile)
+    protected abstract void configureFileVaultXml(
+            CloseableHttpClient httpClient,
+            final URI consoleTargetUrl,
+            final File jcrRootFile,
+            final File filterXmlFile)
             throws MojoExecutionException;
-    
+
     protected abstract void ensureBundlesInstalled(CloseableHttpClient httpClient, final URI consoleTargetUrl)
             throws MojoExecutionException;
-
 }

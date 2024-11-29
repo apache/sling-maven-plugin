@@ -32,7 +32,7 @@ import org.apache.sling.maven.bundlesupport.fsresource.SlingInitialContentMounte
 
 /**
  * Uninstall an OSGi bundle from a running Sling instance.
- * 
+ *
  * For details refer to <a href="bundle-installation.html">Bundle Uninstallation</a>.
  */
 @Mojo(name = "uninstall")
@@ -88,22 +88,24 @@ public class BundleUninstallMojo extends AbstractBundleInstallMojo {
 
         BundleDeploymentMethod deployMethod = getDeploymentMethod();
 
-        try (CloseableHttpClient httpClient = getHttpClient()){
+        try (CloseableHttpClient httpClient = getHttpClient()) {
             if (mountByFS) {
                 configure(httpClient, targetURL, null);
             }
-            getLog().info(
-                    "Uninstalling Bundle " + bundleName + " from "
-                            + targetURL + " via " + deployMethod + "...");
-            deployMethod.execute().undeploy(targetURL, bundleName, new DeployContext()
-                    .log(getLog())
-                    .httpClient(httpClient)
-                    .failOnError(failOnError)
-                    .mimeType(mimeType));
+            getLog().info("Uninstalling Bundle " + bundleName + " from " + targetURL + " via " + deployMethod + "...");
+            deployMethod
+                    .execute()
+                    .undeploy(
+                            targetURL,
+                            bundleName,
+                            new DeployContext()
+                                    .log(getLog())
+                                    .httpClient(httpClient)
+                                    .failOnError(failOnError)
+                                    .mimeType(mimeType));
             getLog().info("Bundle uninstalled successfully!");
         } catch (IOException e) {
-            String msg = "Uninstall from " + targetURL
-                    + " failed, cause: " + e.getMessage();
+            String msg = "Uninstall from " + targetURL + " failed, cause: " + e.getMessage();
             if (failOnError) {
                 throw new MojoExecutionException(msg, e);
             } else {
@@ -113,8 +115,8 @@ public class BundleUninstallMojo extends AbstractBundleInstallMojo {
     }
 
     @Override
-    protected void configure(CloseableHttpClient httpClient, final URI targetURL, final File file) throws MojoExecutionException {
+    protected void configure(CloseableHttpClient httpClient, final URI targetURL, final File file)
+            throws MojoExecutionException {
         new SlingInitialContentMounter(getLog(), httpClient, getRequestConfigBuilder(), project).unmount(targetURL);
     }
-    
 }

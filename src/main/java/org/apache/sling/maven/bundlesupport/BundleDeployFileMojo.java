@@ -29,33 +29,31 @@ import org.apache.maven.plugins.annotations.Parameter;
  * This method posts the bundle referenced via <code>sling.file</code>
  * to an OSGi Bundle Repository accepting the bundle. The plugin uses
  * a <em>multipart/format-data</em> POST request to just post the file to
- * the URL configured in the <code>obr</code> property. 
+ * the URL configured in the <code>obr</code> property.
  * @deprecated Use the OBR goals from the <a href="https://felix.apache.org/documentation/_attachments/components/bundle-plugin/index.html">maven-bundle-plugin</a> instead.
  */
 @Deprecated
-@Mojo(name="deploy-file", requiresProject= false)
+@Mojo(name = "deploy-file", requiresProject = false)
 public class BundleDeployFileMojo extends AbstractBundleDeployMojo {
 
     /**
      * The name of the generated JAR file.
      */
-    @Parameter(property="sling.file")
+    @Parameter(property = "sling.file")
     private String bundleFileName;
-    
+
     @Override
     protected String getJarFileName() throws MojoExecutionException {
         if (bundleFileName == null) {
             throw new MojoExecutionException("Missing sling.file parameter");
         }
-        
+
         return bundleFileName;
     }
-    
+
     @Override
     protected File fixBundleVersion(File jarFile) {
         // we just upload the file as is (the obr might fix the version, too)
         return jarFile;
     }
-
-
 }

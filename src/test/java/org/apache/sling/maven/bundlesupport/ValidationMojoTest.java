@@ -18,12 +18,12 @@
  */
 package org.apache.sling.maven.bundlesupport;
 
-import static org.junit.Assert.assertEquals;
-
 import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
+
 public class ValidationMojoTest {
-    
+
     private static String MESSAGE = "JSON validation failed: Unexpected character '\n' (Codepoint: 10) "
             + "on [lineNumber=47, columnNumber=1434, streamOffset=2866]. "
             + "Reason is [[End of file hit too early]]";
@@ -40,8 +40,8 @@ public class ValidationMojoTest {
 
     @Test
     public void testCleanupMessage() throws Exception {
-        assertEquals("JSON validation failed: Unexpected character '\\n' (Codepoint: 10). Reason is [[End of file hit too early]]",
+        assertEquals(
+                "JSON validation failed: Unexpected character '\\n' (Codepoint: 10). Reason is [[End of file hit too early]]",
                 ValidationMojo.cleanupMessage(MESSAGE));
     }
-
 }

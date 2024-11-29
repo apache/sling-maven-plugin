@@ -38,7 +38,7 @@ public interface DeployMethod {
      * @throws IOException in case of failure
      */
     void deploy(URI targetURL, File file, String bundleSymbolicName, DeployContext context) throws IOException;
-    
+
     /**
      * Undeploy/uninstall a bundle on a Sling instance.
      * @param targetURL Target URL
@@ -47,5 +47,4 @@ public interface DeployMethod {
      * @throws IOException in case of failure
      */
     void undeploy(URI targetURL, String bundleName, DeployContext context) throws IOException;
-    
 }

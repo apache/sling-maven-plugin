@@ -23,9 +23,11 @@ import org.apache.sling.adapter.annotations.Adaptables;
 import org.apache.sling.adapter.annotations.Adapter;
 
 @Adaptables({
-    @Adaptable( adaptableClass = String.class, adapters = { @Adapter(value = {Adapter1.class, Adapter2.class}) }),
-    @Adaptable( adaptableClass = Integer.class, adapters = { @Adapter(Adapter1.class) })
+    @Adaptable(
+            adaptableClass = String.class,
+            adapters = {@Adapter(value = {Adapter1.class, Adapter2.class})}),
+    @Adaptable(
+            adaptableClass = Integer.class,
+            adapters = {@Adapter(Adapter1.class)})
 })
-public class Adapter1 {
-
-}
+public class Adapter1 {}

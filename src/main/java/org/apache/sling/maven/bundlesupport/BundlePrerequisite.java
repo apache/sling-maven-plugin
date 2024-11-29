@@ -29,27 +29,27 @@ import org.osgi.framework.Version;
  * The bundles are only installed if the preconditions are met.
  */
 public final class BundlePrerequisite {
-    
+
     /**
      * List of bundles that is installed when preconditions are met,
      * and if these bundles are not installed yet in the given (or a higher) version.
      */
     private final List<Bundle> bundles = new ArrayList<>();
-    
+
     /**
      * List of precondition bundles that have to be already present in the given
      * (or higher) versions to install the bundles.
      */
     private final List<Bundle> preconditions = new ArrayList<>();
-    
+
     public void addBundle(Bundle bundle) {
         bundles.add(bundle);
     }
-    
+
     public void addPrecondition(Bundle bundle) {
         preconditions.add(bundle);
     }
-    
+
     public List<Bundle> getBundles() {
         return bundles;
     }
@@ -62,29 +62,29 @@ public final class BundlePrerequisite {
      * Described bundle with symbolic name and bundle version.
      */
     public static final class Bundle {
-        
+
         private String groupId;
         private String artifactId;
         private String version;
         private String symbolicName;
-        
+
         public Bundle() {
             // empty constructor
         }
-        
+
         public Bundle(String groupId, String artifactId, String version) {
             this.groupId = groupId;
             this.artifactId = artifactId;
             this.version = version;
         }
-        
+
         public Bundle(String groupId, String artifactId, String version, String symbolicName) {
             this.groupId = groupId;
             this.artifactId = artifactId;
             this.version = version;
             this.symbolicName = symbolicName;
         }
-        
+
         public String getGroupId() {
             return groupId;
         }
@@ -104,19 +104,19 @@ public final class BundlePrerequisite {
         public String getSymbolicName() {
             return StringUtils.defaultString(symbolicName, artifactId);
         }
-        
+
         public void setSymbolicName(String symbolicName) {
             this.symbolicName = symbolicName;
         }
-        
+
         public String getVersion() {
             return version;
         }
-        
+
         public void setVersion(String version) {
             this.version = version;
         }
-        
+
         public String getOsgiVersion() {
             if (this.version == null) {
                 return null;
@@ -124,17 +124,15 @@ public final class BundlePrerequisite {
             // convert to three digit osgi version number
             try {
                 return Version.parseVersion(this.version).toString();
-            }
-            catch (IllegalArgumentException ex) {
+            } catch (IllegalArgumentException ex) {
                 return this.version;
             }
         }
 
         @Override
         public String toString() {
-            return "Bundle [groupId=" + groupId + ", artifactId=" + artifactId + ", version=" + version + ", symbolicName=" + symbolicName
-                    + "]";
+            return "Bundle [groupId=" + groupId + ", artifactId=" + artifactId + ", version=" + version
+                    + ", symbolicName=" + symbolicName + "]";
         }
     }
-
 }

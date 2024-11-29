@@ -42,15 +42,16 @@ import org.apache.sling.commons.osgi.ManifestHeader.Entry;
  * Manages OSGi configurations for File System Resource Provider for Sling-Initial-Content.
  */
 public final class SlingInitialContentMounter {
-    
+
     /** Header containing the sling initial content information. */
     private static final String HEADER_INITIAL_CONTENT = "Sling-Initial-Content";
-    
+
     private final Log log;
     private final MavenProject project;
     private final FsMountHelper helper;
 
-    public SlingInitialContentMounter(Log log, CloseableHttpClient httpClient, RequestConfig.Builder requestConfigBuilder, MavenProject project) {
+    public SlingInitialContentMounter(
+            Log log, CloseableHttpClient httpClient, RequestConfig.Builder requestConfigBuilder, MavenProject project) {
         this.log = log;
         this.project = project;
         this.helper = new FsMountHelper(log, httpClient, requestConfigBuilder, project);
@@ -68,12 +69,12 @@ public final class SlingInitialContentMounter {
         try {
             final Manifest mf = getManifest(bundleFile);
             final String value = mf.getMainAttributes().getValue(HEADER_INITIAL_CONTENT);
-            if ( value == null ) {
+            if (value == null) {
                 log.warn("Bundle has no initial content - no file system provider config created.");
                 return;
             }
             header = ManifestHeader.parse(value);
-            if ( header == null || header.getEntries().length == 0 ) {
+            if (header == null || header.getEntries().length == 0) {
                 log.warn("Unable to parse header or header is empty: " + value);
                 return;
             }
@@ -92,48 +93,50 @@ public final class SlingInitialContentMounter {
         final Entry[] entries = header.getEntries();
         for (final Entry entry : entries) {
             String path = entry.getValue();
-            if ( path != null && !path.endsWith("/") ) {
+            if (path != null && !path.endsWith("/")) {
                 path += "/";
             }
             // check if we should ignore this
             final String ignoreValue = entry.getDirectiveValue("maven:mount");
-            if ( ignoreValue != null && ignoreValue.equalsIgnoreCase("false") ) {
+            if (ignoreValue != null && ignoreValue.equalsIgnoreCase("false")) {
                 log.debug("Ignoring " + path);
                 continue;
             }
             String installPath = entry.getDirectiveValue("path");
-            if ( installPath == null ) {
+            if (installPath == null) {
                 installPath = "/";
             }
             // search the path in the resources (usually this should be the first resource
             // entry but this might be reconfigured
             File dir = null;
             final Iterator<Resource> i = resources.iterator();
-            while ( dir == null && i.hasNext() ) {
+            while (dir == null && i.hasNext()) {
                 final Resource rsrc = i.next();
                 String child = path;
                 // if resource mapping defines a target path: remove target path from checked resource path
                 String targetPath = rsrc.getTargetPath();
-                if ( targetPath != null && !targetPath.endsWith("/") ) {
+                if (targetPath != null && !targetPath.endsWith("/")) {
                     targetPath = targetPath + "/";
                 }
-                log.debug("Checking if project resource '" + rsrc.getDirectory() + "' with target path '" + targetPath + "' is a potential mount point for " + path + " ..." );
-                if ( targetPath != null && path != null && path.startsWith(targetPath) ) {
+                log.debug("Checking if project resource '" + rsrc.getDirectory() + "' with target path '" + targetPath
+                        + "' is a potential mount point for " + path + " ...");
+                if (targetPath != null && path != null && path.startsWith(targetPath)) {
                     child = child.substring(targetPath.length());
                 }
                 dir = new File(rsrc.getDirectory(), child);
-                if ( !dir.exists() ) {
+                if (!dir.exists()) {
                     dir = null;
                 }
             }
-            if ( dir == null ) {
+            if (dir == null) {
                 throw new MojoExecutionException("No resource entry found containing " + path);
             }
             // check for root mapping - which we don't support atm
-            if ( "/".equals(installPath) ) {
-                throw new MojoExecutionException("Mapping to root path not supported by fs provider at the moment. Please adapt your initial content configuration.");
+            if ("/".equals(installPath)) {
+                throw new MojoExecutionException(
+                        "Mapping to root path not supported by fs provider at the moment. Please adapt your initial content configuration.");
             }
-            
+
             // check further initial content directives
             StringBuilder importOptions = new StringBuilder();
             String overwriteValue = entry.getDirectiveValue("overwrite");
@@ -169,10 +172,10 @@ public final class SlingInitialContentMounter {
         log.info("Removing file system provider configurations...");
 
         // remove all current configs for this project
-        final Map<String,FsResourceConfiguration> oldConfigs = helper.getCurrentConfigurations(consoleTargetUrl);
+        final Map<String, FsResourceConfiguration> oldConfigs = helper.getCurrentConfigurations(consoleTargetUrl);
         helper.removeConfigurations(consoleTargetUrl, oldConfigs);
     }
-    
+
     /**
      * Get the manifest from the File.
      * @param bundleFile The bundle jar
@@ -180,9 +183,8 @@ public final class SlingInitialContentMounter {
      * @throws IOException Exception
      */
     private Manifest getManifest(final File bundleFile) throws IOException {
-        try (JarFile file = new JarFile(bundleFile)){
+        try (JarFile file = new JarFile(bundleFile)) {
             return file.getManifest();
         }
     }
-
 }

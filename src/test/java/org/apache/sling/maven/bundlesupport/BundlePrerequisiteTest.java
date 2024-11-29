@@ -18,10 +18,10 @@
  */
 package org.apache.sling.maven.bundlesupport;
 
-import static org.junit.Assert.assertEquals;
-
 import org.apache.sling.maven.bundlesupport.BundlePrerequisite.Bundle;
 import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 public class BundlePrerequisiteTest {
 
@@ -48,5 +48,4 @@ public class BundlePrerequisiteTest {
         assertEquals("1.2.3-SNAPSHOT", bundle1.getVersion());
         assertEquals("1.2.3-SNAPSHOT", bundle1.getOsgiVersion());
     }
-
 }

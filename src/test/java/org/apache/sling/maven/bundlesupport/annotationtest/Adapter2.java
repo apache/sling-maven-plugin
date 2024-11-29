@@ -21,7 +21,7 @@ package org.apache.sling.maven.bundlesupport.annotationtest;
 import org.apache.sling.adapter.annotations.Adaptable;
 import org.apache.sling.adapter.annotations.Adapter;
 
-@Adaptable(adaptableClass = Long.class, adapters = { @Adapter(condition = "first condition", value = Adapter2.class) })
-public class Adapter2 {
-
-}
+@Adaptable(
+        adaptableClass = Long.class,
+        adapters = {@Adapter(condition = "first condition", value = Adapter2.class)})
+public class Adapter2 {}

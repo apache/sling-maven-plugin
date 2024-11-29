@@ -39,11 +39,12 @@ import org.apache.maven.project.MavenProject;
  * Manages OSGi configurations for File System Resource Provider for File Vault XML.
  */
 public final class FileVaultXmlMounter {
-    
+
     private final Log log;
     private final FsMountHelper helper;
 
-    public FileVaultXmlMounter(Log log, CloseableHttpClient httpClient, RequestConfig.Builder requestConfigBuilder, MavenProject project) {
+    public FileVaultXmlMounter(
+            Log log, CloseableHttpClient httpClient, RequestConfig.Builder requestConfigBuilder, MavenProject project) {
         this.log = log;
         this.helper = new FsMountHelper(log, httpClient, requestConfigBuilder, project);
     }
@@ -55,7 +56,8 @@ public final class FileVaultXmlMounter {
      * @param filterXmlFile FileVault Filter XML file
      * @throws MojoExecutionException Exception
      */
-    public void mount(final URI consoleTargetUrl, final File jcrRootFile, final File filterXmlFile) throws MojoExecutionException {
+    public void mount(final URI consoleTargetUrl, final File jcrRootFile, final File filterXmlFile)
+            throws MojoExecutionException {
         log.info("Trying to configure file system provider for FileVault...");
 
         // create config for each path defined in filter
@@ -69,12 +71,12 @@ public final class FileVaultXmlMounter {
                     .fileVaultFilterXml(filterXmlFile.getAbsolutePath()));
             log.info("Created new configuration for resource path " + filterSet.getRoot());
         }
-     
+
         if (!cfgs.isEmpty()) {
             helper.addConfigurations(consoleTargetUrl, cfgs);
         }
     }
-    
+
     /**
      * Remove configurations to a running OSGi instance for FileVault XML
      * @param consoleTargetUrl The web console base url
@@ -82,23 +84,22 @@ public final class FileVaultXmlMounter {
      * @param filterXmlFile FileVault Filter XML file
      * @throws MojoExecutionException Exception
      */
-    public void unmount(final URI consoleTargetUrl, final File jcrRootFile, final File filterXmlFile) throws MojoExecutionException {
+    public void unmount(final URI consoleTargetUrl, final File jcrRootFile, final File filterXmlFile)
+            throws MojoExecutionException {
         log.info("Removing file system provider configurations...");
 
         // remove all current configs for this project
-        final Map<String,FsResourceConfiguration> oldConfigs = helper.getCurrentConfigurations(consoleTargetUrl);
+        final Map<String, FsResourceConfiguration> oldConfigs = helper.getCurrentConfigurations(consoleTargetUrl);
         helper.removeConfigurations(consoleTargetUrl, oldConfigs);
     }
-        
+
     private WorkspaceFilter getWorkspaceFilter(final File filterXmlFile) throws MojoExecutionException {
         try {
             DefaultWorkspaceFilter workspaceFilter = new DefaultWorkspaceFilter();
             workspaceFilter.load(filterXmlFile);
             return workspaceFilter;
-        }
-        catch (IOException | ConfigurationException ex) {
+        } catch (IOException | ConfigurationException ex) {
             throw new MojoExecutionException("Unable to parse workspace filter: " + filterXmlFile.getPath(), ex);
         }
     }
-    
 }
