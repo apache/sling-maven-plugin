@@ -54,7 +54,8 @@ public final class ResponseCodeEnforcingResponseHandler implements HttpClientRes
         this(expectedContentType, null, allowedCodes);
     }
 
-    public ResponseCodeEnforcingResponseHandler(String expectedContentType, Predicate<String> responseStringPredicate, Integer... allowedCodes) {
+    public ResponseCodeEnforcingResponseHandler(
+            String expectedContentType, Predicate<String> responseStringPredicate, Integer... allowedCodes) {
         this.expectedContentType = expectedContentType;
         this.responseStringPredicate = responseStringPredicate;
         this.allowedCodes = Arrays.asList(allowedCodes);
@@ -71,11 +72,16 @@ public final class ResponseCodeEnforcingResponseHandler implements HttpClientRes
                 }
             }
             if (!allowedCodes.contains(response.getCode())) {
-                throw new HttpResponseException(response.getCode(), "Unexpected response code " + response.getCode() + ": " + response.getReasonPhrase());
+                throw new HttpResponseException(
+                        response.getCode(),
+                        "Unexpected response code " + response.getCode() + ": " + response.getReasonPhrase());
             }
-            String actualContentType = Optional.ofNullable(response.getHeader(HttpHeaders.CONTENT_TYPE)).map(Header::getValue).orElse(null);
+            String actualContentType = Optional.ofNullable(response.getHeader(HttpHeaders.CONTENT_TYPE))
+                    .map(Header::getValue)
+                    .orElse(null);
             if (expectedContentType != null && expectedContentType.equals(actualContentType)) {
-                throw new ClientProtocolException("Unexpected content type returned, expected " + expectedContentType + " but was " + actualContentType);
+                throw new ClientProtocolException("Unexpected content type returned, expected " + expectedContentType
+                        + " but was " + actualContentType);
             }
         } finally {
             EntityUtils.consume(entity);

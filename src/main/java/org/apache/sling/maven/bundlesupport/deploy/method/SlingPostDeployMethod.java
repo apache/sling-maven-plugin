@@ -18,8 +18,6 @@
  */
 package org.apache.sling.maven.bundlesupport.deploy.method;
 
-import static org.apache.sling.maven.bundlesupport.JsonSupport.JSON_MIME_TYPE;
-
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -37,6 +35,8 @@ import org.apache.hc.core5.http.message.BasicNameValuePair;
 import org.apache.sling.maven.bundlesupport.deploy.DeployContext;
 import org.apache.sling.maven.bundlesupport.deploy.DeployMethod;
 
+import static org.apache.sling.maven.bundlesupport.JsonSupport.JSON_MIME_TYPE;
+
 public class SlingPostDeployMethod implements DeployMethod {
 
     @Override
@@ -44,7 +44,7 @@ public class SlingPostDeployMethod implements DeployMethod {
         /* truncate off trailing slash as this has special behaviorisms in
          * the SlingPostServlet around created node name conventions */
         targetURL = stripTrailingSlash(targetURL);
-        
+
         // append pseudo path after root URL to not get redirected for nothing
         final HttpPost filePost = new HttpPost(targetURL);
 
@@ -55,7 +55,7 @@ public class SlingPostDeployMethod implements DeployMethod {
         builder.addTextBody("*@TypeHint", "nt:file");
         builder.addBinaryBody("*", file, ContentType.create(context.getMimeType()), file.getName());
         filePost.setEntity(builder.build());
-        
+
         String response = context.getHttpClient().execute(filePost, new BasicHttpClientResponseHandler());
         context.getLog().debug("Received response: " + response);
     }
@@ -69,7 +69,7 @@ public class SlingPostDeployMethod implements DeployMethod {
         post.setHeader("Accept", JSON_MIME_TYPE);
         params.add(new BasicNameValuePair(":operation", "delete"));
         post.setEntity(new UrlEncodedFormEntity(params));
-        
+
         String response = context.getHttpClient().execute(post, new BasicHttpClientResponseHandler());
         context.getLog().debug("Received response: " + response);
     }
@@ -85,9 +85,16 @@ public class SlingPostDeployMethod implements DeployMethod {
 
     static URI stripTrailingSlash(URI targetURL) {
         if (targetURL.getPath().endsWith("/")) {
-            String path = targetURL.getPath().substring(0, targetURL.getPath().length()-1);
+            String path = targetURL.getPath().substring(0, targetURL.getPath().length() - 1);
             try {
-                return new URI(targetURL.getScheme(), targetURL.getUserInfo(), targetURL.getHost(), targetURL.getPort(), path, targetURL.getQuery(), targetURL.getFragment());
+                return new URI(
+                        targetURL.getScheme(),
+                        targetURL.getUserInfo(),
+                        targetURL.getHost(),
+                        targetURL.getPort(),
+                        path,
+                        targetURL.getQuery(),
+                        targetURL.getFragment());
             } catch (URISyntaxException e) {
                 throw new IllegalStateException("Could not create new URI from existing one", e); // should never happen
             }

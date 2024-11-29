@@ -18,6 +18,8 @@
  */
 package org.apache.sling.maven.bundlesupport;
 
+import javax.json.JsonException;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -27,8 +29,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import javax.json.JsonException;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -53,16 +53,17 @@ public class ValidationMojo extends AbstractMojo {
 
     private static final Pattern LINE_NUMBER_PATTERN = Pattern.compile("lineNumber=(\\d+),");
     private static final Pattern COLUMN_NUMBER_PATTERN = Pattern.compile("columnNumber=(\\d+),");
-    private static final Pattern MESSAGE_CLEANUP_PATTERN = Pattern.compile("^(.*) on \\[lineNumber=\\d+, columnNumber=\\d+, streamOffset=\\d+\\](.*)$", Pattern.DOTALL);
-    
+    private static final Pattern MESSAGE_CLEANUP_PATTERN = Pattern.compile(
+            "^(.*) on \\[lineNumber=\\d+, columnNumber=\\d+, streamOffset=\\d+\\](.*)$", Pattern.DOTALL);
+
     /**
      * The Maven project.
      */
-    @Parameter( defaultValue = "${project}", readonly = true )
+    @Parameter(defaultValue = "${project}", readonly = true)
     private MavenProject project;
 
     /**
-     * Whether to skip the validation. 
+     * Whether to skip the validation.
      */
     @Parameter(property = "sling.validation.skip", defaultValue = "false")
     private boolean skip;
@@ -75,44 +76,46 @@ public class ValidationMojo extends AbstractMojo {
     private boolean skipJson;
 
     /**
-     * Whether to accept quote ticks in JSON files or not. 
+     * Whether to accept quote ticks in JSON files or not.
      */
     @Parameter(property = "sling.validation.jsonQuoteTick", defaultValue = "false")
     private boolean jsonQuoteTick;
 
     @Component
     private BuildContext buildContext;
-    
+
     /**
      * @see org.apache.maven.plugin.AbstractMojo#execute()
      */
     public void execute() throws MojoExecutionException, MojoFailureException {
-        if ( this.skip ) {
+        if (this.skip) {
             getLog().info("Validation is skipped.");
             return;
         }
-        
+
         final Iterator<Resource> rsrcIterator = this.project.getResources().iterator();
-        while ( rsrcIterator.hasNext() ) {
+        while (rsrcIterator.hasNext()) {
             final Resource rsrc = rsrcIterator.next();
 
             final File directory = new File(rsrc.getDirectory());
-            if ( directory.exists() ) {
+            if (directory.exists()) {
 
                 if (!buildContext.hasDelta(directory)) {
                     getLog().debug("No files found to validate, skipping.");
                     return;
                 }
-                
+
                 getLog().debug("Scanning " + rsrc.getDirectory());
                 final Scanner scanner = buildContext.newScanner(directory);
 
-                if ( rsrc.getExcludes() != null && rsrc.getExcludes().size() > 0 ) {
-                    scanner.setExcludes( (String[]) rsrc.getExcludes().toArray(new String[rsrc.getExcludes().size()] ) );
+                if (rsrc.getExcludes() != null && rsrc.getExcludes().size() > 0) {
+                    scanner.setExcludes((String[]) rsrc.getExcludes()
+                            .toArray(new String[rsrc.getExcludes().size()]));
                 }
                 scanner.addDefaultExcludes();
-                if ( rsrc.getIncludes() != null && rsrc.getIncludes().size() > 0 ) {
-                    scanner.setIncludes( (String[]) rsrc.getIncludes().toArray(new String[rsrc.getIncludes().size()] ));
+                if (rsrc.getIncludes() != null && rsrc.getIncludes().size() > 0) {
+                    scanner.setIncludes((String[]) rsrc.getIncludes()
+                            .toArray(new String[rsrc.getIncludes().size()]));
                 }
 
                 scanner.scan();
@@ -120,18 +123,18 @@ public class ValidationMojo extends AbstractMojo {
                 final String[] files = scanner.getIncludedFiles();
                 int countProcessed = 0;
                 List<Exception> failures = new ArrayList<>();
-                if ( files != null ) {
-                    for(int m=0; m<files.length; m++) {
+                if (files != null) {
+                    for (int m = 0; m < files.length; m++) {
                         final File file = new File(directory, files[m]);
                         buildContext.removeMessages(file);
                         try {
                             this.validate(file);
-                        }
-                        catch (Exception ex) {
+                        } catch (Exception ex) {
                             failures.add(ex);
-                            buildContext.addMessage(file,
+                            buildContext.addMessage(
+                                    file,
                                     parseLineNumber(ex.getMessage()),
-                                    parseColumnNumber(ex.getMessage()), 
+                                    parseColumnNumber(ex.getMessage()),
                                     cleanupMessage(ex.getMessage()),
                                     BuildContext.SEVERITY_ERROR,
                                     ex.getCause());
@@ -139,13 +142,13 @@ public class ValidationMojo extends AbstractMojo {
                         countProcessed++;
                     }
                 }
-                
+
                 if (!failures.isEmpty()) {
                     if (!buildContext.isIncremental()) {
-                        throw new MojoFailureException("Validated " + countProcessed + " file(s), found " + failures.size() + " failures.");
+                        throw new MojoFailureException(
+                                "Validated " + countProcessed + " file(s), found " + failures.size() + " failures.");
                     }
-                }
-                else {
+                } else {
                     getLog().info("Validated " + countProcessed + " file(s).");
                 }
             }
@@ -154,8 +157,8 @@ public class ValidationMojo extends AbstractMojo {
 
     private void validate(final File file) throws MojoExecutionException {
         getLog().debug("Validating " + file.getPath());
-        if ( file.isFile() ) {
-            if ( file.getName().endsWith(".json") && !this.skipJson ) {
+        if (file.isFile()) {
+            if (file.getName().endsWith(".json") && !this.skipJson) {
                 getLog().debug("Validation JSON file " + file.getPath());
                 FileInputStream fis = null;
                 String json = null;
@@ -176,11 +179,11 @@ public class ValidationMojo extends AbstractMojo {
             }
         }
     }
-    
+
     static int parseLineNumber(String message) {
         return parseNumber(message, LINE_NUMBER_PATTERN);
     }
-    
+
     static int parseColumnNumber(String message) {
         return parseNumber(message, COLUMN_NUMBER_PATTERN);
     }
@@ -189,24 +192,21 @@ public class ValidationMojo extends AbstractMojo {
         Matcher matcher = pattern.matcher(message);
         if (matcher.find()) {
             return NumberUtils.toInt(matcher.group(1));
-        }
-        else {
+        } else {
             return 0;
         }
     }
-    
+
     static String cleanupMessage(String message) {
         String result;
         Matcher matcher = MESSAGE_CLEANUP_PATTERN.matcher(message);
         if (matcher.matches()) {
             result = matcher.group(1) + matcher.group(2);
-        }
-        else {
+        } else {
             result = message;
         }
         result = StringUtils.replace(result, "\n", "\\n");
         result = StringUtils.replace(result, "\r", "");
         return result;
     }
-
 }

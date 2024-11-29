@@ -18,6 +18,11 @@
  */
 package org.apache.sling.maven.bundlesupport.fsresource;
 
+import javax.json.Json;
+import javax.json.JsonArray;
+import javax.json.JsonException;
+import javax.json.JsonObject;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -28,11 +33,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-
-import javax.json.Json;
-import javax.json.JsonArray;
-import javax.json.JsonException;
-import javax.json.JsonObject;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hc.client5.http.HttpResponseException;
@@ -58,53 +58,56 @@ import org.apache.sling.maven.bundlesupport.deploy.method.ResponseCodeEnforcingR
  * Manages OSGi configurations for File System Resource Provider.
  */
 final class FsMountHelper {
-    
+
     /** The fs resource provider factory. */
     private static final String FS_FACTORY = "org.apache.sling.fsprovider.internal.FsResourceProvider";
     /** Http header for content type. */
     private static final String HEADER_CONTENT_TYPE = "Content-Type";
-    
+
     private static final String PROPERTY_FSMODE = "provider.fs.mode";
     private static final String PROPERTY_ROOT = "provider.root";
     private static final String PROPERTY_ROOTS = "provider.roots";
     private static final String PROPERTY_PATH = "provider.file";
     private static final String PROPERTY_INITIAL_CONTENT_IMPORT_OPTIONS = "provider.initial.content.import.options";
     private static final String PROPERTY_FILEVAULT_FILTER_XML = "provider.filevault.filterxml.path";
-        
+
     private final Log log;
     private final CloseableHttpClient httpClient;
     private final RequestConfig.Builder requestConfigBuilder;
     private final MavenProject project;
 
-    public FsMountHelper(Log log, CloseableHttpClient httpClient, RequestConfig.Builder requestConfigBuilder, MavenProject project) {
+    public FsMountHelper(
+            Log log, CloseableHttpClient httpClient, RequestConfig.Builder requestConfigBuilder, MavenProject project) {
         this.log = log;
         this.httpClient = httpClient;
         this.requestConfigBuilder = requestConfigBuilder;
         this.project = project;
     }
-    
+
     /**
      * Adds as set of new configurations and removes old ones.
      */
-    public void addConfigurations(final URI targetUrl, Collection<FsResourceConfiguration> cfgs) throws MojoExecutionException {
-        final Map<String,FsResourceConfiguration> oldConfigs = getCurrentConfigurations(targetUrl);
+    public void addConfigurations(final URI targetUrl, Collection<FsResourceConfiguration> cfgs)
+            throws MojoExecutionException {
+        final Map<String, FsResourceConfiguration> oldConfigs = getCurrentConfigurations(targetUrl);
 
         for (FsResourceConfiguration cfg : cfgs) {
             log.debug("Found mapping " + cfg.getFsRootPath() + " to " + cfg.getResourceRootPath());
-            
+
             // check if this is already configured
             boolean found = false;
-            final Iterator<Map.Entry<String,FsResourceConfiguration>> entryIterator = oldConfigs.entrySet().iterator();
-            while ( !found && entryIterator.hasNext() ) {
-                final Map.Entry<String,FsResourceConfiguration> current = entryIterator.next();
+            final Iterator<Map.Entry<String, FsResourceConfiguration>> entryIterator =
+                    oldConfigs.entrySet().iterator();
+            while (!found && entryIterator.hasNext()) {
+                final Map.Entry<String, FsResourceConfiguration> current = entryIterator.next();
                 final FsResourceConfiguration oldcfg = current.getValue();
                 log.debug("Comparing " + oldcfg.getFsRootPath() + " with " + oldcfg);
                 if (Objects.equals(oldcfg.getFsRootPath(), cfg.getFsRootPath())) {
                     if (cfg.equals(oldcfg)) {
-                        log.info("Using existing configuration for " + cfg.getFsRootPath() + " mounted at " + cfg.getResourceRootPath());
+                        log.info("Using existing configuration for " + cfg.getFsRootPath() + " mounted at "
+                                + cfg.getResourceRootPath());
                         found = true;
-                    }
-                    else {
+                    } else {
                         // remove old config
                         log.info("Removing old configuration for " + oldcfg);
                         removeConfiguration(targetUrl, current.getKey());
@@ -112,21 +115,23 @@ final class FsMountHelper {
                     entryIterator.remove();
                 }
             }
-            if ( !found ) {
-                log.debug("Adding new configuration for " + cfg.getFsRootPath() + " mounted at " + cfg.getResourceRootPath());
+            if (!found) {
+                log.debug("Adding new configuration for " + cfg.getFsRootPath() + " mounted at "
+                        + cfg.getResourceRootPath());
                 addConfiguration(targetUrl, cfg);
-                log.info("Added new configuration for resource path "+ cfg.getResourceRootPath() + " to server");
+                log.info("Added new configuration for resource path " + cfg.getResourceRootPath() + " to server");
             }
         }
-        
+
         // finally remove old configs
         removeConfigurations(targetUrl, oldConfigs);
     }
-    
+
     /**
      * Add a new configuration for the file system provider
      */
-    private void addConfiguration(final URI consoleTargetUrl, FsResourceConfiguration cfg) throws MojoExecutionException {
+    private void addConfiguration(final URI consoleTargetUrl, FsResourceConfiguration cfg)
+            throws MojoExecutionException {
         final URI postUrl = consoleTargetUrl.resolve("configMgr/" + FS_FACTORY);
         final HttpPost post = new HttpPost(postUrl);
         List<NameValuePair> params = new ArrayList<>();
@@ -138,30 +143,34 @@ final class FsMountHelper {
          * https://github.com/apache/felix-dev/blob/6603d69977f4cea8b9b9dd2faf5d320906b43368/webconsole/src/main/java/org/apache/felix/webconsole/internal/configuration/ConfigurationUtil.java#L36
          * This value is also used for performing a redirect and is no valid URI, therefore disable redirect handling
          */
-        params.add(new BasicNameValuePair("pid", "[Temporary PID replaced by real PID upon save]")); // this is replaced with a generated one, upon save, still this is used for the redirect
-        Map<String,String> props = toMap(cfg);
-        for (Map.Entry<String,String> entry : props.entrySet()) {
+        params.add(new BasicNameValuePair(
+                "pid", "[Temporary PID replaced by real PID upon save]")); // this is replaced with a generated one,
+        // upon save, still this is used for the
+        // redirect
+        Map<String, String> props = toMap(cfg);
+        for (Map.Entry<String, String> entry : props.entrySet()) {
             params.add(new BasicNameValuePair(entry.getKey(), entry.getValue()));
         }
         params.add(new BasicNameValuePair("propertylist", StringUtils.join(props.keySet(), ",")));
         post.setEntity(new UrlEncodedFormEntity(params));
-        
+
         // do not follow redirects
-        RequestConfig requestConfig = requestConfigBuilder.setRedirectsEnabled(false).build();
+        RequestConfig requestConfig =
+                requestConfigBuilder.setRedirectsEnabled(false).build();
         HttpClientContext httpContext = HttpClientContext.create();
         httpContext.setRequestConfig(requestConfig);
         try {
             // accept also 302
-            httpClient.execute(post, httpContext, new ResponseCodeEnforcingResponseHandler(HttpStatus.SC_MOVED_TEMPORARILY));
+            httpClient.execute(
+                    post, httpContext, new ResponseCodeEnforcingResponseHandler(HttpStatus.SC_MOVED_TEMPORARILY));
             log.debug("New configuration created POST to " + postUrl);
-        }
-        catch (IOException ex) {
+        } catch (IOException ex) {
             throw new MojoExecutionException("Configuration on " + postUrl + " failed, cause: " + ex.getMessage(), ex);
         }
     }
-    
-    private Map<String,String> toMap(FsResourceConfiguration cfg) {
-        Map<String,String> props = new HashMap<>();
+
+    private Map<String, String> toMap(FsResourceConfiguration cfg) {
+        Map<String, String> props = new HashMap<>();
         if (cfg.getFsMode() != null) {
             props.put(PROPERTY_FSMODE, cfg.getFsMode().name());
         }
@@ -169,7 +178,8 @@ final class FsMountHelper {
             props.put(PROPERTY_PATH, cfg.getFsRootPath().toString());
         }
         if (cfg.getResourceRootPath() != null) {
-            // save property value to both "provider.roots" and "provider.root" because the name has changed between fsresource 1.x and 2.x
+            // save property value to both "provider.roots" and "provider.root" because the name has changed between
+            // fsresource 1.x and 2.x
             props.put(PROPERTY_ROOT, cfg.getResourceRootPath());
             props.put(PROPERTY_ROOTS, cfg.getResourceRootPath());
         }
@@ -181,16 +191,18 @@ final class FsMountHelper {
         }
         return props;
     }
-    
+
     /**
      * Remove all configurations contained in the given config map.
      */
-    public void removeConfigurations(final URI targetUrl, Map<String,FsResourceConfiguration> configs) throws MojoExecutionException {
-        for (Map.Entry<String,FsResourceConfiguration>  current : configs.entrySet()) {
+    public void removeConfigurations(final URI targetUrl, Map<String, FsResourceConfiguration> configs)
+            throws MojoExecutionException {
+        for (Map.Entry<String, FsResourceConfiguration> current : configs.entrySet()) {
             log.debug("Removing configuration for " + current.getValue());
             // remove old config
             removeConfiguration(targetUrl, current.getKey());
-            log.info("Removed configuration for resource path " + current.getValue().getResourceRootPath() + " (PID: " + current.getKey() + ") from server");
+            log.info("Removed configuration for resource path "
+                    + current.getValue().getResourceRootPath() + " (PID: " + current.getKey() + ") from server");
         }
     }
 
@@ -204,17 +216,20 @@ final class FsMountHelper {
         params.add(new BasicNameValuePair("apply", "true"));
         params.add(new BasicNameValuePair("delete", "true"));
         post.setEntity(new UrlEncodedFormEntity(params));
-       
+
         try {
-            JsonObject expectedJsonResponse = Json.createObjectBuilder().add("status", true).build();
+            JsonObject expectedJsonResponse =
+                    Json.createObjectBuilder().add("status", true).build();
             // https://github.com/apache/felix-dev/blob/6603d69977f4cea8b9b9dd2faf5d320906b43368/webconsole/src/main/java/org/apache/felix/webconsole/internal/configuration/ConfigManager.java#L145
-            httpClient.execute(post, new ResponseCodeEnforcingResponseHandler("application/json", 
-                    response ->  JsonSupport.parseObject(response).equals(expectedJsonResponse),
-                    HttpStatus.SC_OK));
-        }
-        catch (IOException ex) {
-            throw new MojoExecutionException("Removing configuration at " + postUrl
-                    + " failed, cause: " + ex.getMessage(), ex);
+            httpClient.execute(
+                    post,
+                    new ResponseCodeEnforcingResponseHandler(
+                            "application/json",
+                            response -> JsonSupport.parseObject(response).equals(expectedJsonResponse),
+                            HttpStatus.SC_OK));
+        } catch (IOException ex) {
+            throw new MojoExecutionException(
+                    "Removing configuration at " + postUrl + " failed, cause: " + ex.getMessage(), ex);
         }
     }
 
@@ -224,42 +239,47 @@ final class FsMountHelper {
      * @return A map (may be empty) with the pids as keys and the configurations as values
      * @throws MojoExecutionException
      */
-    public Map<String,FsResourceConfiguration> getCurrentConfigurations(final URI consoleTargetUrl) throws MojoExecutionException {
-        final Map<String,FsResourceConfiguration> result = new HashMap<>();
+    public Map<String, FsResourceConfiguration> getCurrentConfigurations(final URI consoleTargetUrl)
+            throws MojoExecutionException {
+        final Map<String, FsResourceConfiguration> result = new HashMap<>();
         final URI getUrl = consoleTargetUrl.resolve("configMgr/(service.factoryPid=" + FS_FACTORY + ").json");
         log.debug("Getting current file provider configurations via GET from " + getUrl);
         final HttpGet get = new HttpGet(getUrl);
 
         try (CloseableHttpResponse response = httpClient.execute(get)) {
             final int status = response.getCode();
-            if ( status == HttpStatus.SC_OK ) {
+            if (status == HttpStatus.SC_OK) {
                 String contentType = response.getHeader(HEADER_CONTENT_TYPE).getValue();
                 int pos = contentType.indexOf(';');
-                if ( pos != -1 ) {
+                if (pos != -1) {
                     contentType = contentType.substring(0, pos);
                 }
-                if ( !JsonSupport.JSON_MIME_TYPE.equals(contentType) ) {
+                if (!JsonSupport.JSON_MIME_TYPE.equals(contentType)) {
                     log.debug("Response type from web console is not JSON, but " + contentType);
-                    throw new MojoExecutionException("The Apache Felix Web Console is too old to mount " +
-                            "the initial content through file system provider configs. " +
-                            "Either upgrade the web console or disable this feature.");
+                    throw new MojoExecutionException("The Apache Felix Web Console is too old to mount "
+                            + "the initial content through file system provider configs. "
+                            + "Either upgrade the web console or disable this feature.");
                 }
                 final String jsonText = EntityUtils.toString(response.getEntity());
                 try {
                     JsonArray array = JsonSupport.parseArray(jsonText);
-                    for(int i=0; i<array.size(); i++) {
+                    for (int i = 0; i < array.size(); i++) {
                         final JsonObject obj = array.getJsonObject(i);
                         final String pid = obj.getString("pid");
                         final JsonObject properties = obj.getJsonObject("properties");
                         final String fsmode = getConfigPropertyValue(properties, PROPERTY_FSMODE);
                         final String path = getConfigPropertyValue(properties, PROPERTY_PATH);
-                        final String initialContentImportOptions = getConfigPropertyValue(properties, PROPERTY_INITIAL_CONTENT_IMPORT_OPTIONS);
-                        final String fileVaultFilterXml = getConfigPropertyValue(properties, PROPERTY_FILEVAULT_FILTER_XML);
+                        final String initialContentImportOptions =
+                                getConfigPropertyValue(properties, PROPERTY_INITIAL_CONTENT_IMPORT_OPTIONS);
+                        final String fileVaultFilterXml =
+                                getConfigPropertyValue(properties, PROPERTY_FILEVAULT_FILTER_XML);
                         String root = getConfigPropertyValue(properties, PROPERTY_ROOTS);
                         if (root == null) {
                             root = getConfigPropertyValue(properties, PROPERTY_ROOT);
                         }
-                        if (path != null && path.startsWith(this.project.getBasedir().getAbsolutePath()) && root != null) {
+                        if (path != null
+                                && path.startsWith(this.project.getBasedir().getAbsolutePath())
+                                && root != null) {
                             FsResourceConfiguration cfg = new FsResourceConfiguration()
                                     .fsMode(fsmode)
                                     .resourceRootPath(root)
@@ -274,27 +294,27 @@ final class FsMountHelper {
                         log.info("Found no existing configurations for factory PID " + FS_FACTORY);
                     }
                 } catch (JsonException ex) {
-                    throw new MojoExecutionException("Reading configuration from " + getUrl
-                            + " failed, cause: " + ex.getMessage(), ex);
+                    throw new MojoExecutionException(
+                            "Reading configuration from " + getUrl + " failed, cause: " + ex.getMessage(), ex);
                 }
             } else {
-                throw new HttpResponseException(response.getCode(), "Unexpected status code " + response.getCode() + ": " + response.getReasonPhrase());
+                throw new HttpResponseException(
+                        response.getCode(),
+                        "Unexpected status code " + response.getCode() + ": " + response.getReasonPhrase());
             }
-        }
-        catch (IOException | ProtocolException ex) {
-            throw new MojoExecutionException("Reading configuration from " + getUrl
-                    + " failed, cause: " + ex.getMessage(), ex);
+        } catch (IOException | ProtocolException ex) {
+            throw new MojoExecutionException(
+                    "Reading configuration from " + getUrl + " failed, cause: " + ex.getMessage(), ex);
         }
         return result;
     }
-    
+
     private String getConfigPropertyValue(JsonObject obj, String subKey) {
         if (obj.containsKey(subKey)) {
             JsonObject subObj = obj.getJsonObject(subKey);
             if (subObj.containsKey("value")) {
                 return subObj.getString("value");
-            }
-            else if (subObj.containsKey("values")) {
+            } else if (subObj.containsKey("values")) {
                 JsonArray array = subObj.getJsonArray("values");
                 if (array.size() > 0) {
                     // use only first property value from array
@@ -304,5 +324,4 @@ final class FsMountHelper {
         }
         return null;
     }
-
 }

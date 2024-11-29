@@ -1,20 +1,21 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
-
 package org.apache.sling.maven.bundlesupport;
 
 import java.io.File;
@@ -47,7 +48,7 @@ public class BundleDeployMojo extends AbstractBundleDeployMojo {
     @Parameter(property = "sling.deploy.skip", defaultValue = "false", required = true)
     private boolean skip;
 
-	/**
+    /**
      * The directory for the generated JAR.
      *
      * @parameter expression="${project.build.directory}"
@@ -65,7 +66,7 @@ public class BundleDeployMojo extends AbstractBundleDeployMojo {
     /**
      * The Maven project.
      */
-    @Parameter( defaultValue = "${project}", readonly = true )
+    @Parameter(defaultValue = "${project}", readonly = true)
     private MavenProject project;
 
     @Override
@@ -88,22 +89,22 @@ public class BundleDeployMojo extends AbstractBundleDeployMojo {
     protected File fixBundleVersion(File jarFile) throws MojoExecutionException {
         // if this is a snapshot, replace "SNAPSHOT" with the date generated
         // by the maven deploy plugin
-        if ( this.project.getVersion().indexOf("SNAPSHOT") > 0 ) {
+        if (this.project.getVersion().indexOf("SNAPSHOT") > 0) {
             // create new version string by replacing all '-' with '.'
             String newVersion = this.project.getArtifact().getVersion();
             int firstPos = newVersion.indexOf('-') + 1;
             int pos = 0;
             while (pos != -1) {
                 pos = newVersion.indexOf('-');
-                if ( pos != -1 ) {
-                    newVersion = newVersion.substring(0, pos ) + '.' + newVersion.substring(pos+1);
+                if (pos != -1) {
+                    newVersion = newVersion.substring(0, pos) + '.' + newVersion.substring(pos + 1);
                 }
             }
             // now remove all dots after the third one
             pos = newVersion.indexOf('.', firstPos);
-            while ( pos != -1 ) {
-                newVersion = newVersion.substring(0, pos) + newVersion.substring(pos+1);
-                pos = newVersion.indexOf('.', pos+1);
+            while (pos != -1) {
+                newVersion = newVersion.substring(0, pos) + newVersion.substring(pos + 1);
+                pos = newVersion.indexOf('.', pos + 1);
             }
             return changeVersion(jarFile, project.getVersion(), newVersion);
         }
@@ -111,7 +112,7 @@ public class BundleDeployMojo extends AbstractBundleDeployMojo {
         // if this is a final release append "final"
         try {
             final ArtifactVersion v = this.project.getArtifact().getSelectedVersion();
-            if ( v.getBuildNumber() == 0 && v.getQualifier() == null ) {
+            if (v.getBuildNumber() == 0 && v.getQualifier() == null) {
                 final String newVersion = this.project.getArtifact().getVersion() + ".FINAL";
                 return changeVersion(jarFile, project.getVersion(), newVersion);
             }

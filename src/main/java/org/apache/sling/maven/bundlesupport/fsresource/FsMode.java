@@ -22,7 +22,7 @@ package org.apache.sling.maven.bundlesupport.fsresource;
  * Different modes for File system provider support and file system layouts.
  */
 enum FsMode {
-    
+
     /**
      * Support only files and folders (classic mode).
      */
@@ -32,10 +32,9 @@ enum FsMode {
      * Sling-Initial-Content filesystem layout, supports file and folders ant content files in JSON and jcr.xml format.
      */
     INITIAL_CONTENT,
-    
+
     /**
      * FileVault XML format (expanded content package).
      */
     FILEVAULT_XML
-
 }

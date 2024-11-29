@@ -18,8 +18,9 @@
  */
 package org.apache.sling.maven.bundlesupport;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import javax.json.Json;
+import javax.json.JsonObjectBuilder;
+import javax.json.JsonReader;
 
 import java.io.File;
 import java.io.IOException;
@@ -28,10 +29,6 @@ import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-
-import javax.json.Json;
-import javax.json.JsonObjectBuilder;
-import javax.json.JsonReader;
 
 import org.apache.commons.io.file.PathUtils;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -42,19 +39,27 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class GenerateAdapterMetadataMojoTest {
 
     @Rule
     public TemporaryFolder tmpDirectory = new TemporaryFolder();
 
-    static final Path RELATIVE_ANNOTATIONTEST_PACKAGE_PATH = Paths.get("org", "apache", "sling", "maven", "bundlesupport", "annotationtest");
+    static final Path RELATIVE_ANNOTATIONTEST_PACKAGE_PATH =
+            Paths.get("org", "apache", "sling", "maven", "bundlesupport", "annotationtest");
+
     @Test
     public void testExecute() throws MojoExecutionException, MojoFailureException, IOException, URISyntaxException {
         GenerateAdapterMetadataMojo mojo = new GenerateAdapterMetadataMojo();
         // copy classes in package "annotationtest" to classpath?
         File classpathFolder = tmpDirectory.newFolder("test-classpath");
-        Path testClasspath = Paths.get(GenerateAdapterMetadataMojoTest.class.getProtectionDomain().getCodeSource().getLocation().toURI());
+        Path testClasspath = Paths.get(GenerateAdapterMetadataMojoTest.class
+                .getProtectionDomain()
+                .getCodeSource()
+                .getLocation()
+                .toURI());
         // only support directory right now
         if (!Files.isDirectory(testClasspath)) {
             throw new IllegalStateException("Only supposed to be called from a directory, not a jar file");
@@ -72,12 +77,22 @@ public class GenerateAdapterMetadataMojoTest {
         Path outputFile = new File(tmpDirectory.getRoot(), "output.json").toPath();
         assertTrue(Files.exists(outputFile));
         JsonObjectBuilder expectedJsonObjectBuilder = Json.createObjectBuilder();
-        expectedJsonObjectBuilder.add("java.lang.Long", Json.createObjectBuilder().add("first condition", Adapter2.class.getName()));
-        expectedJsonObjectBuilder.add("java.lang.String", Json.createObjectBuilder().add("If the adaptable is a Adapter1.", Json.createArrayBuilder().add(Adapter1.class.getName()).add(Adapter2.class.getName())));
-        expectedJsonObjectBuilder.add("java.lang.Integer", Json.createObjectBuilder().add("If the adaptable is a Adapter1.", Adapter1.class.getName()));
+        expectedJsonObjectBuilder.add(
+                "java.lang.Long", Json.createObjectBuilder().add("first condition", Adapter2.class.getName()));
+        expectedJsonObjectBuilder.add(
+                "java.lang.String",
+                Json.createObjectBuilder()
+                        .add(
+                                "If the adaptable is a Adapter1.",
+                                Json.createArrayBuilder()
+                                        .add(Adapter1.class.getName())
+                                        .add(Adapter2.class.getName())));
+        expectedJsonObjectBuilder.add(
+                "java.lang.Integer",
+                Json.createObjectBuilder().add("If the adaptable is a Adapter1.", Adapter1.class.getName()));
 
         try (InputStream input = Files.newInputStream(outputFile);
-             JsonReader jsonReader = Json.createReader(input)) {
+                JsonReader jsonReader = Json.createReader(input)) {
             assertEquals(expectedJsonObjectBuilder.build(), jsonReader.readObject());
         }
     }

@@ -18,14 +18,6 @@
  */
 package org.apache.sling.maven.bundlesupport;
 
-import static org.apache.sling.jcr.contentparser.impl.JsonTicksConverter.tickToDoubleQuote;
-
-import java.io.StringReader;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import javax.json.Json;
 import javax.json.JsonArray;
 import javax.json.JsonArrayBuilder;
@@ -34,23 +26,32 @@ import javax.json.JsonObjectBuilder;
 import javax.json.JsonReader;
 import javax.json.JsonReaderFactory;
 
+import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static org.apache.sling.jcr.contentparser.impl.JsonTicksConverter.tickToDoubleQuote;
+
 public final class JsonSupport {
 
     /** Mime type for json response. */
     public static final String JSON_MIME_TYPE = "application/json";
-    
+
     private static final JsonReaderFactory JSON_READER_FACTORY;
+
     static {
         // allow comments in JSON files
-        Map<String,Object> jsonFactoryConfig = new HashMap<>();
+        Map<String, Object> jsonFactoryConfig = new HashMap<>();
         jsonFactoryConfig.put("org.apache.johnzon.supports-comments", true);
         JSON_READER_FACTORY = Json.createReaderFactory(jsonFactoryConfig);
     }
-    
+
     private JsonSupport() {
         // static methods only
     }
-    
+
     /**
      * Parse String to JSON object.
      * @param jsonString JSON string
@@ -62,7 +63,7 @@ public final class JsonSupport {
             return jsonReader.readObject();
         }
     }
-    
+
     /**
      * Parse String to JSON array.
      * @param jsonString JSON string
@@ -74,7 +75,7 @@ public final class JsonSupport {
             return jsonReader.readArray();
         }
     }
-    
+
     /**
      * Validate JSON structure
      * @param jsonString JSON string
@@ -91,45 +92,40 @@ public final class JsonSupport {
             jsonReader.read();
         }
     }
-    
+
     @SuppressWarnings("unchecked")
-    public static void accumulate(Map<String,Object> obj, String name, String value) {
+    public static void accumulate(Map<String, Object> obj, String name, String value) {
         Object current = obj.get(name);
         if (current == null) {
             obj.put(name, value);
-        }
-        else if (current instanceof List) {
-            List<String> array = new ArrayList<>((List)current);
+        } else if (current instanceof List) {
+            List<String> array = new ArrayList<>((List) current);
             array.add(value);
             obj.put(name, array);
-        }
-        else {
+        } else {
             List<String> array = new ArrayList<>();
-            array.add((String)current);
+            array.add((String) current);
             array.add(value);
             obj.put(name, array);
         }
     }
 
     @SuppressWarnings("unchecked")
-    public static JsonObject toJson(Map<String,Object> map) {
+    public static JsonObject toJson(Map<String, Object> map) {
         JsonObjectBuilder builder = Json.createObjectBuilder();
-        for (Map.Entry<String,Object> entry : map.entrySet()) {
+        for (Map.Entry<String, Object> entry : map.entrySet()) {
             if (entry.getValue() instanceof Map) {
-                builder.add(entry.getKey(), toJson((Map<String,Object>)entry.getValue()));
-            }
-            else if (entry.getValue() instanceof List) {
+                builder.add(entry.getKey(), toJson((Map<String, Object>) entry.getValue()));
+            } else if (entry.getValue() instanceof List) {
                 JsonArrayBuilder array = Json.createArrayBuilder();
-                for (String value : (List<String>)entry.getValue()) {
+                for (String value : (List<String>) entry.getValue()) {
                     array.add(value);
                 }
                 builder.add(entry.getKey(), array.build());
-            }
-            else {
-                builder.add(entry.getKey(), (String)entry.getValue());
+            } else {
+                builder.add(entry.getKey(), (String) entry.getValue());
             }
         }
         return builder.build();
     }
-
 }

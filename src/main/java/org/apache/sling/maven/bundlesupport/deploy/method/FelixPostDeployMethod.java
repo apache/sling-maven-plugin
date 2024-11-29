@@ -18,14 +18,14 @@
  */
 package org.apache.sling.maven.bundlesupport.deploy.method;
 
+import javax.json.JsonException;
+import javax.json.JsonObject;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
-
-import javax.json.JsonException;
-import javax.json.JsonObject;
 
 import org.apache.hc.client5.http.classic.methods.HttpPost;
 import org.apache.hc.client5.http.entity.UrlEncodedFormEntity;
@@ -69,9 +69,11 @@ public class FelixPostDeployMethod implements DeployMethod {
         filePost.setEntity(builder.build());
         String response = context.getHttpClient().execute(filePost, new BasicHttpClientResponseHandler());
         // sanity check on response (has really the right servlet answered?)
-        // must be empty in this case (https://github.com/apache/felix-dev/blob/8e35c940a95c91f3fee09c537dbaf9665e5d027e/webconsole/src/main/java/org/apache/felix/webconsole/internal/core/BundlesServlet.java#L340)
+        // must be empty in this case
+        // (https://github.com/apache/felix-dev/blob/8e35c940a95c91f3fee09c537dbaf9665e5d027e/webconsole/src/main/java/org/apache/felix/webconsole/internal/core/BundlesServlet.java#L340)
         if (!response.isEmpty()) {
-            throw new IOException("Unexpected response received from " + postUrl + ". Maybe wrong endpoint? Must be empty but was: " + response);
+            throw new IOException("Unexpected response received from " + postUrl
+                    + ". Maybe wrong endpoint? Must be empty but was: " + response);
         }
     }
 
@@ -85,15 +87,16 @@ public class FelixPostDeployMethod implements DeployMethod {
         post.setEntity(new UrlEncodedFormEntity(params));
         String response = context.getHttpClient().execute(post, new BasicHttpClientResponseHandler());
         // sanity check on response (has really the right servlet answered?)
-        // must be JSON (https://github.com/apache/felix-dev/blob/8e35c940a95c91f3fee09c537dbaf9665e5d027e/webconsole/src/main/java/org/apache/felix/webconsole/internal/core/BundlesServlet.java#L420_
+        // must be JSON
+        // (https://github.com/apache/felix-dev/blob/8e35c940a95c91f3fee09c537dbaf9665e5d027e/webconsole/src/main/java/org/apache/felix/webconsole/internal/core/BundlesServlet.java#L420_
         try {
             JsonObject jsonObject = JsonSupport.parseObject(response);
-            // must contain boolean 
+            // must contain boolean
             jsonObject.getBoolean("fragment");
-        } catch (JsonException|ClassCastException|NullPointerException e) {
-            throw new IOException("Unexpected response received from " + postUrl + ". Maybe wrong endpoint? Must be valid JSON but was: " + response);
+        } catch (JsonException | ClassCastException | NullPointerException e) {
+            throw new IOException("Unexpected response received from " + postUrl
+                    + ". Maybe wrong endpoint? Must be valid JSON but was: " + response);
         }
         context.getLog().debug("Received response from " + postUrl + ": " + response);
     }
-
 }

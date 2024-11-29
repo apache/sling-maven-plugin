@@ -63,16 +63,16 @@ abstract class AbstractBundleRequestMojo extends AbstractMojo {
      *
      * <p>For <strong>WebDAV</strong> deployment it is recommended to include the <a href="https://sling.apache.org/documentation/development/repository-based-development.html#separate-uri-space-webdav">Sling Simple WebDAV servlet root</a>, for instance <a href="http://localhost:8080/dav/default/libs/sling/install">http://localhost:8080/dav/default/libs/sling/install</a>. Omitting the {@code dav/default} segment can lead to conflicts with other servlets.</p>
      */
-    @Parameter(property="sling.url", defaultValue="http://localhost:8080/system/console", required = true)
+    @Parameter(property = "sling.url", defaultValue = "http://localhost:8080/system/console", required = true)
     protected URI slingUrl;
 
     /**
      * The WebConsole URL of the running Sling instance. This is required for file system provider operations.
      * If not configured the value of slingUrl is used.
      */
-    @Parameter(property="sling.console.url")
+    @Parameter(property = "sling.console.url")
     protected URI slingConsoleUrl;
-        
+
     /**
      * An optional url suffix which will be appended to the <code>sling.url</code>
      * for use as the real target url. This allows to configure different target URLs
@@ -81,21 +81,21 @@ abstract class AbstractBundleRequestMojo extends AbstractMojo {
      * <code>sling.urlSuffix=/project/specific/path</code>). This is typically used
      * in conjunction with WebDAV or SlingPostServlet deployment methods.
      */
-    @Parameter(property="sling.urlSuffix")
+    @Parameter(property = "sling.urlSuffix")
     protected String slingUrlSuffix;
-    
+
     /**
      * The user name to authenticate at the running Sling instance.
      */
-    @Parameter(property="sling.user", defaultValue = "admin")
+    @Parameter(property = "sling.user", defaultValue = "admin")
     private String user;
 
     /**
      * The password to authenticate at the running Sling instance.
      */
-    @Parameter(property="sling.password", defaultValue = "admin")
+    @Parameter(property = "sling.password", defaultValue = "admin")
     private String password;
-    
+
     /**
      * Determines whether or not to fail the build if
      * the HTTP POST or PUT returns an non-OK response code.
@@ -158,24 +158,20 @@ abstract class AbstractBundleRequestMojo extends AbstractMojo {
         try (JarFile jaf = new JarFile(jarFile)) {
             Manifest manif = jaf.getManifest();
             if (manif == null) {
-                getLog().debug(
-                    "getBundleSymbolicName: Missing manifest in " + jarFile);
+                getLog().debug("getBundleSymbolicName: Missing manifest in " + jarFile);
                 return null;
             }
 
             String symbName = manif.getMainAttributes().getValue(Constants.BUNDLE_SYMBOLICNAME);
             if (symbName == null) {
-                getLog().debug(
-                    "getBundleSymbolicName: No Bundle-SymbolicName in "
-                        + jarFile);
+                getLog().debug("getBundleSymbolicName: No Bundle-SymbolicName in " + jarFile);
                 return null;
             }
 
             return symbName;
         } catch (IOException ioe) {
-            getLog().warn("getBundleSymbolicName: Problem checking " + jarFile,
-                ioe);
-        } 
+            getLog().warn("getBundleSymbolicName: Problem checking " + jarFile, ioe);
+        }
         // fall back to not being a bundle
         return null;
     }
@@ -206,9 +202,16 @@ abstract class AbstractBundleRequestMojo extends AbstractMojo {
 
     public static URI addTrailingSlash(URI targetURL) {
         if (!targetURL.getPath().endsWith("/")) {
-            String path = targetURL.getPath()+"/";
+            String path = targetURL.getPath() + "/";
             try {
-                return new URI(targetURL.getScheme(), targetURL.getUserInfo(), targetURL.getHost(), targetURL.getPort(), path, targetURL.getQuery(), targetURL.getFragment());
+                return new URI(
+                        targetURL.getScheme(),
+                        targetURL.getUserInfo(),
+                        targetURL.getHost(),
+                        targetURL.getPort(),
+                        path,
+                        targetURL.getQuery(),
+                        targetURL.getFragment());
             } catch (URISyntaxException e) {
                 throw new IllegalStateException("Could not create new URI from existing one", e); // should never happen
             }
@@ -226,7 +229,10 @@ abstract class AbstractBundleRequestMojo extends AbstractMojo {
         basicAuth.initPreemptive(new UsernamePasswordCredentials(user, password.toCharArray()));
 
         // restrict to the Sling URL only
-        final HttpHost target = new HttpHost(getTargetURL().getScheme(), getTargetURL().getHost(), getTargetURL().getPort());
+        final HttpHost target = new HttpHost(
+                getTargetURL().getScheme(),
+                getTargetURL().getHost(),
+                getTargetURL().getPort());
 
         return HttpClients.custom()
                 .setDefaultRequestConfig(getRequestConfigBuilder().build())
@@ -236,12 +242,15 @@ abstract class AbstractBundleRequestMojo extends AbstractMojo {
 
     protected RequestConfig.Builder getRequestConfigBuilder() {
         return RequestConfig.custom()
-            .setConnectTimeout(Timeout.ofSeconds(httpConnectTimeoutSec))
-            .setResponseTimeout(Timeout.ofSeconds(httpResponseTimeoutSec));
+                .setConnectTimeout(Timeout.ofSeconds(httpConnectTimeoutSec))
+                .setResponseTimeout(Timeout.ofSeconds(httpResponseTimeoutSec));
     }
 
     protected File resolveArtifact(org.eclipse.aether.artifact.Artifact artifact) throws MojoExecutionException {
-        ArtifactRequest req = new ArtifactRequest(artifact, getRemoteRepositoriesWithUpdatePolicy(repositories, RepositoryPolicy.UPDATE_POLICY_ALWAYS), null);
+        ArtifactRequest req = new ArtifactRequest(
+                artifact,
+                getRemoteRepositoriesWithUpdatePolicy(repositories, RepositoryPolicy.UPDATE_POLICY_ALWAYS),
+                null);
         ArtifactResult resolutionResult;
         try {
             resolutionResult = repoSystem.resolveArtifact(repoSession, req);
@@ -251,11 +260,15 @@ abstract class AbstractBundleRequestMojo extends AbstractMojo {
         }
     }
 
-    private List<RemoteRepository> getRemoteRepositoriesWithUpdatePolicy(List<RemoteRepository> repositories, String updatePolicy) {
+    private List<RemoteRepository> getRemoteRepositoriesWithUpdatePolicy(
+            List<RemoteRepository> repositories, String updatePolicy) {
         List<RemoteRepository> newRepositories = new ArrayList<>();
         for (RemoteRepository repo : repositories) {
             RemoteRepository.Builder builder = new RemoteRepository.Builder(repo);
-            RepositoryPolicy newPolicy = new RepositoryPolicy(repo.getPolicy(false).isEnabled(), updatePolicy, repo.getPolicy(false).getChecksumPolicy());
+            RepositoryPolicy newPolicy = new RepositoryPolicy(
+                    repo.getPolicy(false).isEnabled(),
+                    updatePolicy,
+                    repo.getPolicy(false).getChecksumPolicy());
             builder.setPolicy(newPolicy);
             newRepositories.add(builder.build());
         }
@@ -276,14 +289,18 @@ abstract class AbstractBundleRequestMojo extends AbstractMojo {
         }
 
         @Override
-        public void process(HttpRequest request, EntityDetails entity, HttpContext context) throws HttpException, IOException {
+        public void process(HttpRequest request, EntityDetails entity, HttpContext context)
+                throws HttpException, IOException {
             if (!(context instanceof HttpClientContext)) {
-                throw new IllegalStateException("This interceptor only supports HttpClientContext but context is of type " + context.getClass());
+                throw new IllegalStateException(
+                        "This interceptor only supports HttpClientContext but context is of type "
+                                + context.getClass());
             }
-            HttpClientContext httpClientContext = (HttpClientContext)context;
+            HttpClientContext httpClientContext = (HttpClientContext) context;
 
             log.debug("Adding preemptive authentication to request for target host " + targetHost);
-            // as the AuthExchange object is already retrieved by the client when the interceptor kicks in, it needs to modify the existing object
+            // as the AuthExchange object is already retrieved by the client when the interceptor kicks in, it needs to
+            // modify the existing object
             httpClientContext.getAuthExchange(targetHost).select(basicAuth);
         }
     }

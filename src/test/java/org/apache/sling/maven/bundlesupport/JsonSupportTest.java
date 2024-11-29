@@ -18,24 +18,23 @@
  */
 package org.apache.sling.maven.bundlesupport;
 
+import javax.json.JsonArray;
+import javax.json.JsonException;
+import javax.json.JsonObject;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import org.junit.Test;
+
 import static org.apache.sling.maven.bundlesupport.JsonSupport.accumulate;
 import static org.apache.sling.maven.bundlesupport.JsonSupport.parseArray;
 import static org.apache.sling.maven.bundlesupport.JsonSupport.parseObject;
 import static org.apache.sling.maven.bundlesupport.JsonSupport.toJson;
 import static org.apache.sling.maven.bundlesupport.JsonSupport.validateJsonStructure;
 import static org.junit.Assert.assertEquals;
-
-import java.util.HashMap;
-import java.util.Map;
-
-import javax.json.JsonArray;
-import javax.json.JsonException;
-import javax.json.JsonObject;
-
-import org.junit.Test;
-
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 
 public class JsonSupportTest {
 
@@ -59,26 +58,26 @@ public class JsonSupportTest {
         validateJsonStructure("{'prop1':123}", true);
     }
 
-    @Test(expected=JsonException.class)
+    @Test(expected = JsonException.class)
     public void testValidateJsonStructure_Invalid() {
         validateJsonStructure("wurstbrot", false);
     }
 
-    @Test(expected=JsonException.class)
+    @Test(expected = JsonException.class)
     public void testValidateJsonStructure_InvalidQuoteTick() {
         validateJsonStructure("{'prop1':123}", false);
     }
 
     @Test
     public void testAccumulate_NewValue() {
-        Map<String,Object> map = new HashMap<>();
+        Map<String, Object> map = new HashMap<>();
         accumulate(map, "prop1", "value1");
         assertEquals(ImmutableMap.of("prop1", "value1"), map);
     }
 
     @Test
     public void testAccumulate_ExistingValue() {
-        Map<String,Object> map = new HashMap<>();
+        Map<String, Object> map = new HashMap<>();
         map.put("prop1", "value1");
         accumulate(map, "prop1", "value2");
         assertEquals(ImmutableMap.of("prop1", ImmutableList.of("value1", "value2")), map);
@@ -86,30 +85,29 @@ public class JsonSupportTest {
 
     @Test
     public void testAccumulate_ExistingArray() {
-        Map<String,Object> map = new HashMap<>();
-        map.put("prop1", ImmutableList.of("value1","value2"));
+        Map<String, Object> map = new HashMap<>();
+        map.put("prop1", ImmutableList.of("value1", "value2"));
         accumulate(map, "prop1", "value3");
-        assertEquals(ImmutableMap.of("prop1", ImmutableList.of("value1", "value2","value3")), map);
+        assertEquals(ImmutableMap.of("prop1", ImmutableList.of("value1", "value2", "value3")), map);
     }
 
     @Test
     public void testToJson() {
-        Map<String,Object> map = ImmutableMap.<String, Object>builder()
+        Map<String, Object> map = ImmutableMap.<String, Object>builder()
                 .put("prop1", "value1")
-                .put("prop2", ImmutableList.of("value2","value3"))
+                .put("prop2", ImmutableList.of("value2", "value3"))
                 .put("prop3", ImmutableMap.of("prop4", "value4"))
                 .build();
         JsonObject obj = toJson(map);
-        
+
         assertEquals("value1", obj.getString("prop1"));
-        
+
         JsonArray array = obj.getJsonArray("prop2");
         assertEquals(2, array.size());
         assertEquals("value2", array.getString(0));
         assertEquals("value3", array.getString(1));
-        
+
         JsonObject prop3 = obj.getJsonObject("prop3");
         assertEquals("value4", prop3.getString("prop4"));
     }
-
 }
