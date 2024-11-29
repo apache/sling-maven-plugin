@@ -48,7 +48,7 @@ import org.sonatype.plexus.build.incremental.BuildContext;
 /**
  * Validate all JSON files of a project. It only ensures they are well-formed but not that they are valid against a certain schema.
  */
-@Mojo(name = "validate", defaultPhase = LifecyclePhase.PROCESS_RESOURCES)
+@Mojo(name = "validate", defaultPhase = LifecyclePhase.PROCESS_RESOURCES, threadSafe = true)
 public class ValidationMojo extends AbstractMojo {
 
     private static final Pattern LINE_NUMBER_PATTERN = Pattern.compile("lineNumber=(\\d+),");
