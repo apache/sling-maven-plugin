@@ -22,8 +22,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 
-import org.apache.sling.maven.bundlesupport.deploy.method.FelixPostDeployMethod;
-
 /**
  * Deploys/installs and undeploys/uninstalls bundles on a Sling instance.
  */
@@ -42,7 +40,8 @@ public interface DeployMethod {
     /**
      * Undeploy/uninstall a bundle on a Sling instance.
      * @param targetURL Target URL
-     * @param bundleName Bundle symbolic name or file name (for all methods except for {@link FelixPostDeployMethod})
+     * @param bundleName Bundle symbolic name or file name (for all methods except for
+     *      {@link org.apache.sling.maven.bundlesupport.deploy.method.FelixPostDeployMethod})
      * @param context Deploy context parameters
      * @throws IOException in case of failure
      */
