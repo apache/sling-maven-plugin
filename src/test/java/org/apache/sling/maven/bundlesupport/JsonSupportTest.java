@@ -18,15 +18,14 @@
  */
 package org.apache.sling.maven.bundlesupport;
 
-import javax.json.JsonArray;
-import javax.json.JsonException;
-import javax.json.JsonObject;
-
 import java.util.HashMap;
 import java.util.Map;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import jakarta.json.JsonArray;
+import jakarta.json.JsonException;
+import jakarta.json.JsonObject;
 import org.junit.Test;
 
 import static org.apache.sling.maven.bundlesupport.JsonSupport.accumulate;
