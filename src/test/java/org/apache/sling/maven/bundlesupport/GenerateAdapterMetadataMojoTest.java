@@ -18,10 +18,6 @@
  */
 package org.apache.sling.maven.bundlesupport;
 
-import javax.json.Json;
-import javax.json.JsonObjectBuilder;
-import javax.json.JsonReader;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -30,6 +26,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import jakarta.json.Json;
+import jakarta.json.JsonObjectBuilder;
+import jakarta.json.JsonReader;
 import org.apache.commons.io.file.PathUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
