@@ -58,14 +58,20 @@ public class FsMountMojo extends AbstractFsMountMojo {
     private static final String BUNDLE_GROUP_ID = "org.apache.sling";
 
     private static final String FS_BUNDLE_ARTIFACT_ID = "org.apache.sling.fsresource";
-    private static final String FS_BUNDLE_DEFAULT_VERSION = "2.1.16";
-    private static final String FS_BUNDLE_LEGACY_DEFAULT_VERSION = "1.4.8";
+    // TODO: update to 2.3.0 when released
+    private static final String FS_BUNDLE_DEFAULT_VERSION = "2.2.1-SNAPSHOT";
+    private static final String FS_BUNDLE_LEGACY_DEFAULT_VERSION = "2.2.0";
+    private static final String FS_BUNDLE_LEGACY_ACNIENT_DEFAULT_VERSION = "1.4.8";
+
+    private static final String SLING_API_BUNDLE_ARTIFACT_ID = "org.apache.sling.api";
+    private static final String SLING_API_BUNDLE_MIN_VERSION = "2.25.4";
 
     private static final String RESOURCE_RESOLVER_BUNDLE_ARTIFACT_ID = "org.apache.sling.resourceresolver";
-    private static final String RESOURCE_RESOLVER_BUNDLE_MIN_VERSION = "1.5.18";
+    private static final String RESOURCE_RESOLVER_BUNDLE_LEGACY_MIN_VERSION = "1.5.18";
 
     private static final String JOHNZON_BUNDLE_ARTIFACT_ID = "org.apache.sling.commons.johnzon";
-    private static final String JOHNZON_BUNDLE_MIN_VERSION = "1.0.0";
+    private static final String JOHNZON_2_BUNDLE_MIN_VERSION = "2.0.0";
+    private static final String JOHNZON_1_BUNDLE_MIN_VERSION = "1.2.6";
 
     private static final String COMMONS_COLLECTIONS4_BUNDLE_GROUP_ID = "org.apache.commons";
     private static final String COMMONS_COLLECTIONS4_BUNDLE_ARTIFACT_ID = "commons-collections4";
@@ -108,8 +114,35 @@ public class FsMountMojo extends AbstractFsMountMojo {
      *     &lt;bundles&gt;
      *       &lt;bundle&gt;
      *         &lt;groupId&gt;org.apache.sling&lt;/groupId&gt;
+     *         &lt;artifactId&gt;org.apache.sling.fsresource&lt;/artifactId&gt;
+     *         &lt;version&gt;2.3.0&lt;/version&gt;
+     *       &lt;/bundle&gt;
+     *     &lt;/bundles&gt;
+     *     &lt;preconditions&gt;
+     *       &lt;bundle&gt;
+     *         &lt;groupId&gt;org.apache.sling&lt;/groupId&gt;
      *         &lt;artifactId&gt;org.apache.sling.commons.johnzon&lt;/artifactId&gt;
-     *         &lt;version&gt;1.0.0&lt;/version&gt;
+     *         &lt;version&gt;2.0.0&lt;/version&gt;
+     *       &lt;/bundle&gt;
+     *       &lt;bundle&gt;
+     *         &lt;groupId&gt;org.apache.sling&lt;/groupId&gt;
+     *         &lt;artifactId&gt;org.apache.sling.api&lt;/artifactId&gt;
+     *         &lt;version&gt;2.25.4&lt;/version&gt;
+     *       &lt;/bundle&gt;
+     *       &lt;bundle&gt;
+     *         &lt;groupId&gt;org.apache.commons&lt;/groupId&gt;
+     *         &lt;artifactId&gt;commons-collections4&lt;/artifactId&gt;
+     *         &lt;version&gt;4.1&lt;/version&gt;
+     *         &lt;symbolicName&gt;org.apache.commons.collections4&lt;/symbolicName&gt;
+     *       &lt;/bundle&gt;
+     *     &lt;/preconditions&gt;
+     *   &lt;/bundlePrerequisite&gt;
+     *   &lt;bundlePrerequisite&gt;
+     *     &lt;bundles&gt;
+     *       &lt;bundle&gt;
+     *         &lt;groupId&gt;org.apache.sling&lt;/groupId&gt;
+     *         &lt;artifactId&gt;org.apache.sling.commons.johnzon&lt;/artifactId&gt;
+     *         &lt;version&gt;1.2.6&lt;/version&gt;
      *       &lt;/bundle&gt;
      *       &lt;bundle&gt;
      *         &lt;groupId&gt;org.apache.commons&lt;/groupId&gt;
@@ -120,7 +153,7 @@ public class FsMountMojo extends AbstractFsMountMojo {
      *       &lt;bundle&gt;
      *         &lt;groupId&gt;org.apache.sling&lt;/groupId&gt;
      *         &lt;artifactId&gt;org.apache.sling.fsresource&lt;/artifactId&gt;
-     *         &lt;version&gt;2.1.16&lt;/version&gt;
+     *         &lt;version&gt;2.2.0&lt;/version&gt;
      *       &lt;/bundle&gt;
      *     &lt;/bundles&gt;
      *     &lt;preconditions&gt;
@@ -178,36 +211,59 @@ public class FsMountMojo extends AbstractFsMountMojo {
         }
 
         if (deployFsResourceBundlePrerequisites == null) {
-            BundlePrerequisite latest = new BundlePrerequisite();
-            latest.addBundle(new Bundle(BUNDLE_GROUP_ID, JOHNZON_BUNDLE_ARTIFACT_ID, JOHNZON_BUNDLE_MIN_VERSION));
-            latest.addBundle(new Bundle(
+            BundlePrerequisite latestJakartaJson = new BundlePrerequisite();
+            latestJakartaJson.addBundle(new Bundle(BUNDLE_GROUP_ID, FS_BUNDLE_ARTIFACT_ID, FS_BUNDLE_DEFAULT_VERSION));
+            latestJakartaJson.addPrecondition(
+                    new Bundle(BUNDLE_GROUP_ID, JOHNZON_BUNDLE_ARTIFACT_ID, JOHNZON_2_BUNDLE_MIN_VERSION));
+            latestJakartaJson.addPrecondition(
+                    new Bundle(BUNDLE_GROUP_ID, SLING_API_BUNDLE_ARTIFACT_ID, SLING_API_BUNDLE_MIN_VERSION));
+            latestJakartaJson.addPrecondition(new Bundle(
                     COMMONS_COLLECTIONS4_BUNDLE_GROUP_ID,
                     COMMONS_COLLECTIONS4_BUNDLE_ARTIFACT_ID,
                     COMMONS_COLLECTIONS4_BUNDLE_MIN_VERSION,
                     COMMONS_COLLECTIONS4_BUNDLE_SYMBOLICNAME));
-            latest.addBundle(new Bundle(BUNDLE_GROUP_ID, FS_BUNDLE_ARTIFACT_ID, FS_BUNDLE_DEFAULT_VERSION));
-            latest.addPrecondition(new Bundle(
-                    BUNDLE_GROUP_ID, RESOURCE_RESOLVER_BUNDLE_ARTIFACT_ID, RESOURCE_RESOLVER_BUNDLE_MIN_VERSION));
-            addDeployFsResourceBundlePrerequisite(latest);
+            addDeployFsResourceBundlePrerequisite(latestJakartaJson);
 
-            BundlePrerequisite legacy = new BundlePrerequisite();
-            legacy.addBundle(new Bundle(BUNDLE_GROUP_ID, FS_BUNDLE_ARTIFACT_ID, FS_BUNDLE_LEGACY_DEFAULT_VERSION));
-            addDeployFsResourceBundlePrerequisite(legacy);
+            BundlePrerequisite legacyJavaxJson = new BundlePrerequisite();
+            legacyJavaxJson.addBundle(
+                    new Bundle(BUNDLE_GROUP_ID, JOHNZON_BUNDLE_ARTIFACT_ID, JOHNZON_1_BUNDLE_MIN_VERSION));
+            legacyJavaxJson.addBundle(new Bundle(
+                    COMMONS_COLLECTIONS4_BUNDLE_GROUP_ID,
+                    COMMONS_COLLECTIONS4_BUNDLE_ARTIFACT_ID,
+                    COMMONS_COLLECTIONS4_BUNDLE_MIN_VERSION,
+                    COMMONS_COLLECTIONS4_BUNDLE_SYMBOLICNAME));
+            legacyJavaxJson.addBundle(
+                    new Bundle(BUNDLE_GROUP_ID, FS_BUNDLE_ARTIFACT_ID, FS_BUNDLE_LEGACY_DEFAULT_VERSION));
+            legacyJavaxJson.addPrecondition(new Bundle(
+                    BUNDLE_GROUP_ID,
+                    RESOURCE_RESOLVER_BUNDLE_ARTIFACT_ID,
+                    RESOURCE_RESOLVER_BUNDLE_LEGACY_MIN_VERSION));
+            addDeployFsResourceBundlePrerequisite(legacyJavaxJson);
+
+            BundlePrerequisite legacyAncient = new BundlePrerequisite();
+            legacyAncient.addBundle(
+                    new Bundle(BUNDLE_GROUP_ID, FS_BUNDLE_ARTIFACT_ID, FS_BUNDLE_LEGACY_ACNIENT_DEFAULT_VERSION));
+            addDeployFsResourceBundlePrerequisite(legacyAncient);
         }
 
+        boolean foundMatch = false;
         for (BundlePrerequisite bundlePrerequisite : deployFsResourceBundlePrerequisites) {
             if (isBundlePrerequisitesPreconditionsMet(httpClient, bundlePrerequisite, consoleTargetUrl)) {
                 for (Bundle bundle : bundlePrerequisite.getBundles()) {
                     deployBundle(httpClient, bundle, consoleTargetUrl);
                 }
+                foundMatch = true;
                 break;
-            } else {
-                throw new MojoExecutionException(
-                        "Target server does not meet prerequisites for this goal. Haven't found the necessary bundles: "
-                                + bundlePrerequisite.getPreconditions().stream()
-                                        .map(BundlePrerequisite.Bundle::toString)
-                                        .collect(Collectors.joining(", ")));
             }
+        }
+        if (!foundMatch) {
+            throw new MojoExecutionException(
+                    "Target server does not meet any of the prerequisites for this goal. Haven't found the necessary bundles: "
+                            + deployFsResourceBundlePrerequisites.stream()
+                                    .map(bundlePrerequisite -> bundlePrerequisite.getPreconditions().stream()
+                                            .map(BundlePrerequisite.Bundle::toString)
+                                            .collect(Collectors.joining(", ")))
+                                    .collect(Collectors.joining(" OR ")));
         }
     }
 
