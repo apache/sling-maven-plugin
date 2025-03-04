@@ -18,15 +18,14 @@
  */
 package org.apache.sling.maven.bundlesupport.deploy.method;
 
-import javax.json.JsonException;
-import javax.json.JsonObject;
-
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 
+import jakarta.json.JsonException;
+import jakarta.json.JsonObject;
 import org.apache.hc.client5.http.classic.methods.HttpPost;
 import org.apache.hc.client5.http.entity.UrlEncodedFormEntity;
 import org.apache.hc.client5.http.entity.mime.MultipartEntityBuilder;

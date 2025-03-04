@@ -18,19 +18,19 @@
  */
 package org.apache.sling.maven.bundlesupport;
 
-import javax.json.Json;
-import javax.json.JsonArray;
-import javax.json.JsonArrayBuilder;
-import javax.json.JsonObject;
-import javax.json.JsonObjectBuilder;
-import javax.json.JsonReader;
-import javax.json.JsonReaderFactory;
-
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import jakarta.json.Json;
+import jakarta.json.JsonArray;
+import jakarta.json.JsonArrayBuilder;
+import jakarta.json.JsonObject;
+import jakarta.json.JsonObjectBuilder;
+import jakarta.json.JsonReader;
+import jakarta.json.JsonReaderFactory;
 
 import static org.apache.sling.jcr.contentparser.impl.JsonTicksConverter.tickToDoubleQuote;
 
@@ -80,7 +80,7 @@ public final class JsonSupport {
      * Validate JSON structure
      * @param jsonString JSON string
      * @param tickToDoubleQuote Tick to double quote
-     * @throws javax.json.JsonException when JSON structure is invalid
+     * @throws jakarta.json.JsonException when JSON structure is invalid
      */
     public static void validateJsonStructure(String jsonString, boolean tickToDoubleQuote) {
         String transformedJsonString = jsonString;

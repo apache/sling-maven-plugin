@@ -18,10 +18,6 @@
  */
 package org.apache.sling.maven.bundlesupport;
 
-import javax.json.Json;
-import javax.json.JsonException;
-import javax.json.JsonWriter;
-
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -37,6 +33,9 @@ import io.github.classgraph.ClassGraph;
 import io.github.classgraph.ClassInfo;
 import io.github.classgraph.ClassInfoList;
 import io.github.classgraph.ScanResult;
+import jakarta.json.Json;
+import jakarta.json.JsonException;
+import jakarta.json.JsonWriter;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
