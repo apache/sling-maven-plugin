@@ -20,8 +20,8 @@ package org.apache.sling.maven.bundlesupport;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
-import org.apache.commons.lang3.StringUtils;
 import org.osgi.framework.Version;
 
 /**
@@ -102,7 +102,7 @@ public final class BundlePrerequisite {
         }
 
         public String getSymbolicName() {
-            return StringUtils.defaultString(symbolicName, artifactId);
+            return Objects.toString(symbolicName, artifactId);
         }
 
         public void setSymbolicName(String symbolicName) {
