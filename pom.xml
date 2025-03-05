@@ -28,7 +28,7 @@
     </parent>
 
     <artifactId>sling-maven-plugin</artifactId>
-    <version>3.0.4</version>
+    <version>3.0.5-SNAPSHOT</version>
     <packaging>maven-plugin</packaging>
 
     <name>Apache Sling Maven Plugin</name>
@@ -42,7 +42,7 @@
     <scm>
         <connection>scm:git:https://gitbox.apache.org/repos/asf/sling-maven-plugin.git</connection>
         <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/sling-maven-plugin.git</developerConnection>
-        <tag>sling-maven-plugin-3.0.4</tag>
+        <tag>HEAD</tag>
         <url>https://github.com/apache/sling-maven-plugin/tree/${project.scm.tag}</url>
     </scm>
 
@@ -55,7 +55,7 @@
         <maven.compiler.target>${sling.java.version}</maven.compiler.target>
         <starter-its.startTimeoutSeconds>180</starter-its.startTimeoutSeconds>
         <!-- the time in seconds to wait for Sling Starter Feature to be started for the ITs -->
-        <project.build.outputTimestamp>1741166935</project.build.outputTimestamp>
+        <project.build.outputTimestamp>1741167011</project.build.outputTimestamp>
     </properties>
 
     <dependencies>
