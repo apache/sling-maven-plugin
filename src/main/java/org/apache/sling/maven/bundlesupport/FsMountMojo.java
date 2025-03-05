@@ -58,8 +58,7 @@ public class FsMountMojo extends AbstractFsMountMojo {
     private static final String BUNDLE_GROUP_ID = "org.apache.sling";
 
     private static final String FS_BUNDLE_ARTIFACT_ID = "org.apache.sling.fsresource";
-    // TODO: update to 2.3.0 when released
-    private static final String FS_BUNDLE_DEFAULT_VERSION = "2.2.1-SNAPSHOT";
+    private static final String FS_BUNDLE_DEFAULT_VERSION = "2.3.0";
     private static final String FS_BUNDLE_LEGACY_DEFAULT_VERSION = "2.2.0";
     private static final String FS_BUNDLE_LEGACY_ACNIENT_DEFAULT_VERSION = "1.4.8";
 
