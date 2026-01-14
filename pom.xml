@@ -62,19 +62,20 @@
         <dependency>
             <groupId>org.apache.httpcomponents.client5</groupId>
             <artifactId>httpclient5</artifactId>
+            <!-- stick with version 5.1.x, higher version break the ITs (authentication problem?) -->
             <version>5.1.4</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
-            <version>3.17.0</version>
+            <version>3.20.0</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
-            <version>2.18.0</version>
+            <version>2.21.0</version>
             <scope>compile</scope>
         </dependency>
         <!-- just for JsonTicksConverter -->
@@ -94,7 +95,7 @@
         <dependency>
             <groupId>org.apache.jackrabbit.vault</groupId>
             <artifactId>org.apache.jackrabbit.vault</artifactId>
-            <version>3.8.2</version>
+            <version>4.1.4</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
@@ -106,7 +107,7 @@
         <dependency>
             <groupId>org.apache.johnzon</groupId>
             <artifactId>johnzon-core</artifactId>
-            <version>2.0.1</version>
+            <version>2.0.2</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
@@ -148,7 +149,7 @@
         <dependency>
             <groupId>io.github.classgraph</groupId>
             <artifactId>classgraph</artifactId>
-            <version>4.8.179</version>
+            <version>4.8.184</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
@@ -235,10 +236,8 @@
             <plugin>
                 <groupId>org.apache.sling</groupId>
                 <artifactId>feature-launcher-maven-plugin</artifactId>
-                <version>0.1.2</version>
+                <version>1.0.2</version>
                 <configuration>
-                    <!-- newer versions don't work due to https://issues.apache.org/jira/browse/SLING-11158 -->
-                    <featureLauncherVersion>1.1.26</featureLauncherVersion>
                     <launches>
                         <launch>
                             <id>sling-starter-oak-tar</id>
@@ -246,7 +245,7 @@
                             <feature>
                                 <groupId>org.apache.sling</groupId>
                                 <artifactId>org.apache.sling.starter</artifactId>
-                                <version>12</version>
+                                <version>13</version>
                                 <classifier>oak_tar</classifier>
                                 <type>slingosgifeature</type>
                             </feature>
@@ -265,6 +264,28 @@
                             <goal>start</goal>
                             <goal>stop</goal>
                         </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>se.thinkcode.wait</groupId>
+                <artifactId>http</artifactId>
+                <version>1.2.0</version>
+                <executions>
+                    <execution>
+                        <id>wait-for-sling-startup</id>
+                        <goals>
+                            <goal>wait</goal>
+                        </goals>
+                        <phase>pre-integration-test</phase>
+                        <configuration>
+                            <url>http://localhost:${starter-its.http.port}/starter.html</url>
+                            <timeout>${starter-its.startTimeoutSeconds}000</timeout>
+                            <waitableStatuses>
+                                <waitableStatus>404</waitableStatus>
+                                <waitableStatus>503</waitableStatus>
+                            </waitableStatuses>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
@@ -368,5 +389,20 @@
                 </pluginManagement>
             </build>
         </profile>
+
+        <!--
+          Debugging profile:
+          - Run on port 8080 (not random port)
+          - Waits for user input after tests are completed to allow inspection before shutting down the Sling instance
+          - Sets log level for Sling Models to DEBUG
+         -->
+        <profile>
+            <id>debug</id>
+            <properties>
+                <starter-its.http.port>8080</starter-its.http.port>
+                <feature-launcher.waitForInput>true</feature-launcher.waitForInput>
+            </properties>
+        </profile>
     </profiles>
+
 </project>
