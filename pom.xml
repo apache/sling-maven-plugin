@@ -63,7 +63,7 @@
             <groupId>org.apache.httpcomponents.client5</groupId>
             <artifactId>httpclient5</artifactId>
             <!-- stick with version 5.1.x, higher version break the ITs (authentication problem?) -->
-            <version>5.1.4</version>
+            <version>5.6.3</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
